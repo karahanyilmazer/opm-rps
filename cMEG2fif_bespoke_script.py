@@ -6,6 +6,7 @@ Load OPM Data, convert for use in MNE
 """
 
 # %% Import packages
+#! %matplotlib qt
 import json
 import os
 
@@ -23,19 +24,23 @@ from utils import (
     read_old_cMEG,
 )
 
-data_dir = r"C:\Users\user\Desktop\MasterThesis\data_nottingham"
+data_dir = r"C:\Files\Coding\Python\Neuro\data\Gesture\Rock Paper Scissors"
+# data_dir = r"C:\Users\user\Desktop\MasterThesis\data_nottingham"
 # data_dir = r'D:\PhD\data\2023-06-21_nottingham'
-day = "20230622"
-acq_time = "160513"
-
-# %% configure subjects directory
-# subject = "11766"
+day = "20230623"
+# acq_time = "095228"  # Noise
+# acq_time = "100008"  # Noise
+# acq_time = "100245"  # Noise
+acq_time = "102814"  # Run 1
+# acq_time = "104104"  # Run 2
+# acq_time = "105342"  # Run 3 (might have some data from Run 4)
+# acq_time = "110808"  # Run 4
+# acq_time = "112029"  # Rest
 
 # %% Data filename and path
 file_path = os.path.join(
     data_dir,
     day,
-    "Bespoke scans",
     day + "_" + acq_time + "_cMEG_Data",
     day + "_" + acq_time + "_meg.cMEG",
 )
@@ -201,15 +206,8 @@ events = np.array([(on_ind, 0, value) for on_ind, value in zip(on_inds, event_va
 event_id = {
     "cue_1": 1,
     "cue_2": 2,
-    "cue_3": 3,
-    "cue_4": 4,
-    "cue_5": 5,
+    "cue_3": 4,
     "end_trial": 7,
-    "press_1": 8,
-    "press_2": 16,
-    "press_3": 32,
-    "press_4": 64,
-    "press_5": 128,
     "experiment_marker": 255,
 }
 
@@ -228,3 +226,5 @@ raw.plot(events=events, event_id=event_id, block=True)
 # # Source Analysis and ICA maybe? We might leave it out for now?
 # # mtg = mne.channels.make_dig_montage(ch_pos=ch_pos)
 # # raw.set_montage(mtg)  # TODO: problems setting the montage
+
+# %%
