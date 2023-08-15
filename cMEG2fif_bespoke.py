@@ -26,7 +26,7 @@ from utils import (
 
 
 def get_data_mne(
-    data_dir: str, day="20230622", acq_time="155445"
+    data_dir: str, day="20230623", acq_time="155445", paradigm="gesture"
 ) -> Tuple[mne.io.array.array.RawArray, np.ndarray, dict]:
     """Get data from a cMEG file and convert it to a MNE raw object.
 
@@ -48,7 +48,6 @@ def get_data_mne(
     file_path = os.path.join(
         data_dir,
         day,
-        "Bespoke scans",
         day + "_" + acq_time + "_cMEG_Data",
         day + "_" + acq_time + "_meg.cMEG",
     )
@@ -214,20 +213,29 @@ def get_data_mne(
     )
 
     # Define the event_id dictionary with swapped keys and values
-    event_id = {
-        "cue_1": 1,
-        "cue_2": 2,
-        "cue_3": 3,
-        "cue_4": 4,
-        "cue_5": 5,
-        "end_trial": 7,
-        "press_1": 8,
-        "press_2": 16,
-        "press_3": 32,
-        "press_4": 64,
-        "press_5": 128,
-        "experiment_marker": 255,
-    }
+    if paradigm == "gesture":
+        event_id = {
+            "cue_1": 1,
+            "cue_2": 2,
+            "cue_3": 4,
+            "end_trial": 7,
+            "experiment_marker": 255,
+        }
+    elif paradigm == "finger":
+        event_id = {
+            "cue_1": 1,
+            "cue_2": 2,
+            "cue_3": 3,
+            "cue_4": 4,
+            "cue_5": 5,
+            "end_trial": 7,
+            "press_1": 8,
+            "press_2": 16,
+            "press_3": 32,
+            "press_4": 64,
+            "press_5": 128,
+            "experiment_marker": 255,
+        }
 
     # #%% Digitisation and montage
 
@@ -245,5 +253,32 @@ def get_data_mne(
 
     return raw, events, event_id
 
+
+# %%
+data_dir = r"C:\Files\Coding\Python\Neuro\data\Gesture\Rock Paper Scissors"
+# data_dir = r"C:\Users\user\Desktop\MasterThesis\data_nottingham"
+# data_dir = r'D:\PhD\data\2023-06-21_nottingham'
+day = "20230623"
+# acq_time = "095228"  # Noise
+# acq_time = "100008"  # Noise
+# acq_time = "100245"  # Noise
+# acq_time = "102814"  # Run 1
+# acq_time = "104104"  # Run 2
+# acq_time = "105342"  # Run 3 (might have some data from Run 4)
+# acq_time = "110808"  # Run 4
+# acq_time = "112029"  # Rest
+
+acq_time_list = ["102814", "104104", "105342", "110808"]
+raw_list = []
+events_list = []
+
+for acq_time in acq_time_list:
+    raw, events, event_id = get_data_mne(data_dir, day, acq_time)
+    raw_list.append(raw)
+    events_list.append(events)
+
+
+# %%
+raw, events = mne.concatenate_raws(raw_list, events_list=events_list)
 
 # %%
