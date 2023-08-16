@@ -5,14 +5,22 @@ Preprocess OPM data from a single run.
 
 @author: Karahan Yilmazer
 """
-
 # %% Import packages
 # !%matplotlib qt
+import sys
+
+import matplotlib.pyplot as plt
 import mne
 import numpy as np
 
 from utils import get_mne_data
 
+# High-DPI monitor settings
+if 'qApp' not in vars():
+    from matplotlib.backends.qt_compat import QtWidgets
+
+    qApp = QtWidgets.QApplication(sys.argv)
+    plt.matplotlib.rcParams['figure.dpi'] = qApp.desktop().physicalDpiX()
 # %%
 data_dir = r'C:\Files\Coding\Python\Neuro\data\Gesture\Rock Paper Scissors'
 # data_dir = r'C:\Users\user\Desktop\MasterThesis\data_nottingham'
@@ -37,11 +45,29 @@ if run_idx == 2:
     idx = np.where(events[:, 2] == 255)[0][1] + 1
     events = events[:idx, :]
 
+raw.info['bads'] = [
+    'LN[X]',
+    'LN[Y]',
+    'LN[Z]',
+    'FZ[X]',
+    'K9[X]',
+    'KF[Y]',
+    'MU[Z]',
+    'LB[X]',
+    'LB[Y]',
+    'MV[X]',
+    'MV[Y]',
+    'MV[Z]',
+    'HF[Y]',
+    'HJ[X]',
+]
+
 # %%
 # Plotting for sanity check
-raw.compute_psd().plot()
-# raw.plot(events=events, event_id=event_id, scalings='auto')
+# raw.compute_psd().plot(picks='data', exclude='bads')
+raw.plot(events=events, event_id=event_id, scalings='auto')
 
 # Bad channels (Run 1): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z]
-
-# %%
+# Bad channels (Run 2): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z]
+# Bad channels (Run 3): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
+# Bad channels (Run 4): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
