@@ -1,8 +1,9 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Load OPM Data, convert for use in MNE
+Preprocess OPM data from multiple runs.  
 
-@author: Ryan Hill, Molly Rea, Martin Iniguez
+@author: Karahan Yilmazer
 """
 
 # %% Import packages

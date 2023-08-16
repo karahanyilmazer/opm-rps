@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Load OPM data, convert for use in MNE.
+
+@author: Ryan Hill, Molly Rea, Martin Iniguez
+"""
+
 import json
 import os
 import re
