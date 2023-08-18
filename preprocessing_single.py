@@ -72,6 +72,16 @@ raw.info['bads'] = [
     'HJ[X]',
 ]
 
+x_axis_channels = [ch for ch in raw.ch_names if '[X]' in ch]
+y_axis_channels = [ch for ch in raw.ch_names if '[Y]' in ch]
+z_axis_channels = [ch for ch in raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
+
+raws = dict()
+raws['x'] = raw.copy().pick(x_axis_channels)
+raws['y'] = raw.copy().pick(y_axis_channels)
+raws['z'] = raw.copy().pick(z_axis_channels)
+
+del raw
 # %%
 # Plotting for sanity check
 # raw.compute_psd().plot(picks='data', exclude='bads')
