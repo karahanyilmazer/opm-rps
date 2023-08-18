@@ -71,3 +71,10 @@ raw.plot(events=events, event_id=event_id, scalings='auto')
 # Bad channels (Run 2): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z]
 # Bad channels (Run 3): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
 # Bad channels (Run 4): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
+
+# %%
+# Define events of interest
+event_id_subset = {'cue_1': 1, 'cue_2': 2, 'cue_3': 4}
+
+# Create epochs
+epochs = mne.Epochs(raw, events, event_id_subset, tmin=-0.5, tmax=2.1, baseline=None)
