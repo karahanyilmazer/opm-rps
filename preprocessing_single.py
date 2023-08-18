@@ -9,11 +9,20 @@ Preprocess OPM data from a single run.
 # !%matplotlib qt
 import sys
 
+sys.path.insert(0, r'C:\Files\Coding\Python\Neuro\eeg_classes')
+
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
-
-from utils import get_mne_data
+from scipy.stats import zscore
+from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from src.base.EEG import EEG
+from src.preprocessing.FeatureExtractor import FeatureExtractor
+from src.utils.DataLoader import DataLoader
 
 # High-DPI monitor settings
 if 'qApp' not in vars():
@@ -22,25 +31,26 @@ if 'qApp' not in vars():
     qApp = QtWidgets.QApplication(sys.argv)
     plt.matplotlib.rcParams['figure.dpi'] = qApp.desktop().physicalDpiX()
 # %%
-data_dir = r'C:\Files\Coding\Python\Neuro\data\Gesture\Rock Paper Scissors'
-# data_dir = r'C:\Users\user\Desktop\MasterThesis\data_nottingham'
-# data_dir = r'D:\PhD\data\2023-06-21_nottingham'
-day = '20230623'
-# acq_time = '095228'  # Noise
-# acq_time = '100008'  # Noise
-# acq_time = '100245'  # Noise
-# acq_time = '102814'  # Run 1
-# acq_time = '104104'  # Run 2
-# acq_time = '105342'  # Run 3 (has some data from Run 4 after 681.499 s)
-# acq_time = '110808'  # Run 4
-# acq_time = '112029'  # Rest
+loader = DataLoader()
 
-acq_time_list = ['102814', '104104', '105342', '110808']
-run_idx = 0
+data_dir = r'C:\Files\Coding\Python\Neuro\data\Gesture\Nottingham\Rock Paper Scissors'
+day = '20230623'  # or '20230622'
+acq_time_dict = {
+    'noise_1': '095228',
+    'noise_2': '100008',
+    'noise_3': '100245',
+    'run_1': '102814',
+    'run_2': '104104',
+    'run_3': '105342',  # has some data from run_4 after 681.499 s
+    'run_4': '110808',
+    'rest': '112029',
+}
 
-raw, events, event_id = get_mne_data(data_dir, day, acq_time_list[run_idx])
+acq_time_key = 'run_1'
+
+raw, events, event_id = loader.get_meg_data(data_dir, day, acq_time_dict[acq_time_key])
 # Crop the end of Run 3 as it includes the beginning of Run 4
-if run_idx == 2:
+if acq_time_key == 'run_3':
     raw.crop(tmax=681.499)
     idx = np.where(events[:, 2] == 255)[0][1] + 1
     events = events[:idx, :]
