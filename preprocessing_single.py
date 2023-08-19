@@ -121,4 +121,22 @@ del raw
 event_id_subset = {'cue_1': 1, 'cue_2': 2, 'cue_3': 4}
 
 # Create epochs
-epochs = mne.Epochs(raw, events, event_id_subset, tmin=-0.5, tmax=2.1, baseline=None)
+epochs = dict()
+epochs['x'] = mne.Epochs(
+    raws['x'], events, event_id_subset, tmin=-0.5, tmax=2.1, baseline=None
+)
+epochs['y'] = mne.Epochs(
+    raws['y'], events, event_id_subset, tmin=-0.5, tmax=2.1, baseline=None
+)
+epochs['z'] = mne.Epochs(
+    raws['z'], events, event_id_subset, tmin=-0.5, tmax=2.1, baseline=None
+)
+
+# %%
+_, axs = plt.subplots(3, 1)
+epochs_spectrum = dict()
+epochs_spectrum['x'] = epochs['x'].compute_psd()
+epochs_spectrum['x']['cue_1'].plot(picks='data', exclude='bads', axes=axs[0])
+epochs_spectrum['x']['cue_2'].plot(picks='data', exclude='bads', axes=axs[1])
+epochs_spectrum['x']['cue_3'].plot(picks='data', exclude='bads', axes=axs[2])
+# %%
