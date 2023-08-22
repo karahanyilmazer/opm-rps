@@ -82,6 +82,10 @@ combined_bads = [
 
 raw.info['bads'] = combined_bads
 
+notch_freqs = np.arange(50, 600, 50)
+notch_freqs = np.insert(notch_freqs, 5, 277)
+raw.notch_filter(notch_freqs)
+
 x_axis_channels = [ch for ch in raw.ch_names if '[X]' in ch]
 y_axis_channels = [ch for ch in raw.ch_names if '[Y]' in ch]
 z_axis_channels = [ch for ch in raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
