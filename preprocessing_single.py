@@ -143,4 +143,48 @@ epochs_spectrum['x'] = epochs['x'].compute_psd()
 epochs_spectrum['x']['cue_1'].plot(picks='data', exclude='bads', axes=axs[0])
 epochs_spectrum['x']['cue_2'].plot(picks='data', exclude='bads', axes=axs[1])
 epochs_spectrum['x']['cue_3'].plot(picks='data', exclude='bads', axes=axs[2])
+
+# %%
+fe = FeatureExtractor(epochs['x'])
+X_var = fe.get_var_feat(epochs['x'].get_data(), epochs['x'].ch_names)
+X_bp = fe.get_bp_feat(epochs['x'].get_data(), epochs['x'].ch_names)
+y = epochs['x'].events[:, 2]
+
+# %%
+X = X_bp
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+cv_train_scores = []
+cv_test_scores = []
+
+for train_index, test_index in skf.split(X, y):
+    X_train, X_test = [X[i] for i in train_index], [X[i] for i in test_index]
+    y_train, y_test = [y[i] for i in train_index], [y[i] for i in test_index]
+
+    svm = SVC(gamma='auto')
+
+    # You can train and test your model within this loop.
+    # print("TRAIN:", train_index, "TEST:", test_index)
+    # print("X_train:", X_train)
+    # print("X_test:", X_test)
+    # print("y_train:", y_train)
+    # print("y_test:", y_test)
+    svm.fit(X_train, y_train)
+    # print(svm.predict(X_train))
+    # print(svm.predict(X_test))
+    cv_train_scores.append(svm.score(X_train, y_train))
+    cv_test_scores.append(svm.score(X_test, y_test))
+    # print("-" * 40)
+
+print('TRAIN')
+print(cv_train_scores)
+print(np.mean(cv_train_scores))
+print('TEST')
+print(cv_test_scores)
+print(np.mean(cv_test_scores))
+
 # %%
