@@ -43,7 +43,7 @@ data_dict = {
     'device': 'OPM',
     'subject': 11766,
     'session': 20230623,  # or 20230622
-    'run': 'run_3',
+    'run': 'run_1',
 }
 
 cropping = (0, None)
@@ -51,7 +51,7 @@ if data_dict['run'] == 'run_3':
     # Crop the end of Run 3 as it includes the beginning of Run 4
     cropping = (0, 681.449)
 
-fmin, fmax = None, 400
+fmin, fmax = 1, 400
 tmin, tmax = -0.5, 2.1
 events = ('cue_1', 'cue_2', 'cue_3')
 # events = None
