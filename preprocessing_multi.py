@@ -21,8 +21,10 @@ os.environ[
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
+from src.base.EEG import EEG
 from src.preprocessing.FeatureExtractor import FeatureExtractor
 from src.utils.MNELoader import MNELoader
+from tqdm import tqdm
 
 # High-DPI monitor settings
 if 'qApp' not in vars():
@@ -50,6 +52,47 @@ if 'qApp' not in vars():
 # Bad channels (Run 4): LN[X, Y, Z], K9[X], FZ[X], LB[X], HJ[X], LP[X], KF[Y], MV[Y, Z], KC[Y, Z], KE[Y], HF[Y], LB[Y], MU[Z]
 # Sus channels (Run 4): G0[X], K9[Z], LM[Z], LP[Z]
 
+raws = []
+event_arrs = []
+
+for run in tqdm(['run_1', 'run_2', 'run_3', 'run_4']):
+    data_dict = {
+        'data_dir': r'C:\Files\Coding\Python\Neuro\data',
+        'paradigm': 'Gesture',
+        'dataset': 'Nottingham Gesture',
+        'device': 'OPM',
+        'subject': 11766,
+        'session': 20230623,  # or 20230622
+        'run': run,
+    }
+
+    # MNE objects
+    mne_loader = MNELoader(data_dict)
+    raw, event_arr, event_id, device = mne_loader.get_objects()
+
+    cropping = (0, None)
+    if data_dict['run'] == 'run_3':
+        # Crop the end of Run 3 as it includes the beginning of Run 4
+        cropping = (0, 681.449)
+        raw.crop(*cropping)
+        # Convert the cropping times to indices
+        low, high = raw.time_as_index(cropping)
+        # Create a Boolean mask for the relevant part of the array
+        mask = np.logical_and(event_arr[:, 0] >= low, event_arr[:, 0] <= high)
+        # Crop the events array
+        event_arr = event_arr[mask]
+
+    raws.append(raw)
+    event_arrs.append(event_arr)
+
+# Concatenate all raw and event objects
+raw, event_arr = mne.concatenate_raws(raws, events_list=event_arrs)
+del raws, event_arrs
+
+# %%
+fmin, fmax = 1, 400
+tmin, tmax = -0.5, 2.1
+events = ('cue_1', 'cue_2', 'cue_3')
 combined_bads = [
     'FR[Z]',
     'FZ[X]',
@@ -75,63 +118,24 @@ combined_bads = [
     'MU[Z]',
 ]
 
-raws = []
-event_arrs = []
-
-for run in ['run_1', 'run_2', 'run_3', 'run_4']:
-    data_dict = {
-        'data_dir': r'C:\Files\Coding\Python\Neuro\data',
-        'paradigm': 'Gesture',
-        'dataset': 'Nottingham Gesture',
-        'device': 'OPM',
-        'subject': 11766,
-        'session': 20230623,  # or 20230622
-        'run': run,
-    }
-
-    # MNE objects
-    mne_loader = MNELoader(data_dict)
-    raw, event_arr, event_id, device = mne_loader.get_objects()
-
-    if data_dict['run'] == 'run_3':
-        # Crop the end of Run 3 as it includes the beginning of Run 4
-        cropping = (0, 681.449)
-        raw.crop(*cropping)
-        # Convert the cropping times to indices
-        low, high = raw.time_as_index(cropping)
-        # Create a Boolean mask for the relevant part of the array
-        mask = np.logical_and(event_arr[:, 0] >= low, event_arr[:, 0] <= high)
-        # Crop the events array
-        event_arr = event_arr[mask]
-
-    raws.append(raw)
-    event_arrs.append(event_arr)
-
-# Concatenate all raw and event objects
-raw, event_arr = mne.concatenate_raws(raws, events_list=event_arrs)
-del raws, event_arrs
+mne_objects = raw, event_arr, event_id, device
+meg = EEG(
+    None,
+    bp_filt=(fmin, fmax),
+    epoching=(tmin, tmax),
+    cropping=cropping,
+    events=events,
+    apply_notch=True,
+    bad_chs=combined_bads,
+    mne_objects=mne_objects,
+    logger_name='meg_analysis',
+)
+del raw, event_arr, event_id, device
 
 # %%
-raw_filt = raw.copy()
-
-notch_freqs = np.arange(50, 600, 50)
-notch_freqs = np.insert(notch_freqs, 5, 227)
-notch_freqs = np.insert(notch_freqs, 6, 277)
-notch_freqs = np.insert(notch_freqs, 13, 554)
-raw.notch_filter(notch_freqs)
-
-fmin, fmax = None, 400
-raw.filter(fmin, fmax)
-
-raw.info['bads'].extend(combined_bads)
-
-# %%
-tmin, tmax = -0.5, 2.1
-events = ('cue_1', 'cue_2', 'cue_3')
-
-x_axis_channels = [ch for ch in raw.ch_names if '[X]' in ch]
-y_axis_channels = [ch for ch in raw.ch_names if '[Y]' in ch]
-z_axis_channels = [ch for ch in raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
+x_axis_channels = [ch for ch in meg.raw.ch_names if '[X]' in ch]
+y_axis_channels = [ch for ch in meg.raw.ch_names if '[Y]' in ch]
+z_axis_channels = [ch for ch in meg.raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
 
 raws = dict()
 raws['x'] = raw.copy().pick(x_axis_channels)
@@ -149,13 +153,13 @@ tmin, tmax = -0.5, 2.1
 # Create epochs
 epochs = dict()
 epochs['x'] = mne.Epochs(
-    raws['x'], event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
+    raws['x'], meg.event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
 )
 epochs['y'] = mne.Epochs(
-    raws['y'], event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
+    raws['y'], meg.event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
 )
 epochs['z'] = mne.Epochs(
-    raws['z'], event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
+    raws['z'], meg.event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
 )
 
 # %%
