@@ -133,34 +133,16 @@ meg = EEG(
 del raw, event_arr, event_id, device
 
 # %%
+# Get lists of channels for each axis
 x_axis_channels = [ch for ch in meg.raw.ch_names if '[X]' in ch]
 y_axis_channels = [ch for ch in meg.raw.ch_names if '[Y]' in ch]
 z_axis_channels = [ch for ch in meg.raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
 
-raws = dict()
-raws['x'] = raw.copy().pick(x_axis_channels)
-raws['y'] = raw.copy().pick(y_axis_channels)
-raws['z'] = raw.copy().pick(z_axis_channels)
-# %%
-# Plotting for sanity check
-# raws['x'].plot(events=events, event_id=event_id, scalings='auto')
-raws['x'].compute_psd().plot(picks='data', exclude='bads', average=False)
-# %%
-# Define events of interest
-event_id_subset = {'cue_1': 1, 'cue_2': 2, 'cue_3': 4}
-tmin, tmax = -0.5, 2.1
-
 # Create epochs
 epochs = dict()
-epochs['x'] = mne.Epochs(
-    raws['x'], meg.event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
-)
-epochs['y'] = mne.Epochs(
-    raws['y'], meg.event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
-)
-epochs['z'] = mne.Epochs(
-    raws['z'], meg.event_arr, event_id_subset, tmin=tmin, tmax=tmax, baseline=None
-)
+epochs['x'] = meg.epochs.copy().pick(x_axis_channels)
+epochs['y'] = meg.epochs.copy().pick(y_axis_channels)
+epochs['z'] = meg.epochs.copy().pick(z_axis_channels)
 
 # %%
 epochs['x'].plot(scalings='auto', butterfly=True)
@@ -197,10 +179,35 @@ X_welch_z = fe.get_welch_feat(epochs['z'].get_data(), epochs['z'].ch_names)
 y = epochs['x'].events[:, 2]
 
 # %%
-file = os.path.join('pickles', 'feature_matrices', 'y' + '.pkl')
-# Open a file to dump the data
-with open(file, 'wb') as pkl_file:
-    # Dump the list to the pickle file
-    pickle.dump(y, pkl_file)
+file_list = [
+    'X_var_x',
+    'X_var_y',
+    'X_var_z',
+    'X_bp_x',
+    'X_bp_y',
+    'X_bp_z',
+    'X_welch_x',
+    'X_welch_y',
+    'X_welch_z',
+    'y',
+]
+var_list = [
+    X_var_x,
+    X_var_y,
+    X_var_z,
+    X_bp_x,
+    X_bp_y,
+    X_bp_z,
+    X_welch_x,
+    X_welch_y,
+    X_welch_z,
+    y,
+]
+for file, var in zip(file_list, var_list):
+    file = os.path.join('pickles', 'feature_matrices', file + '.pkl')
+    # Open a file to dump the data
+    with open(file, 'wb') as pkl_file:
+        # Dump the list to the pickle file
+        pickle.dump(var, pkl_file)
 
 # %%
