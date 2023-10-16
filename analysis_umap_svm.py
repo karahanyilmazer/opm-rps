@@ -12,17 +12,21 @@ import os
 import sys
 
 sys.path.insert(0, r'C:\Files\Coding\Python\Neuro\eeg_classes')
+os.environ['WANDB_NOTEBOOK_NAME'] = 'analysis_umap_svm.py'
+
+from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from src.analysis.ConfusionMatrix import ConfusionMatrix
 from src.utils.DataLoader import DataLoader
 from umap import UMAP
-from umap import plot as plot_umap
+
+import wandb
 
 # %%
 data_loader = DataLoader(os.getcwd())
@@ -50,6 +54,89 @@ X = X_bp
 # X = X_welch
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+# %%
+sweep_config = {
+    'method': 'random',
+    'name': 'UMAP+SVM Sweep 1',
+    'metric': {'goal': 'maximize', 'name': 'cv_test_acc_mean'},
+    'parameters': {
+        'n_components': {
+            'distribution': 'int_uniform',
+            'min': 1,
+            'max': 500,
+        },
+        'n_neighbors': {
+            'distribution': 'int_uniform',
+            'min': 1,
+            'max': 400,
+        },
+        'min_dist': {
+            'distribution': 'uniform',
+            'min': 0,
+            'max': 0.99,
+        },
+        'kernel': {'values': ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']},
+        'C': {
+            'distribution': 'log_uniform_values',
+            'min': 0.0001,  # log10(0.001) = -3
+            'max': 1000,  # log10(1000) = 3
+        },
+        'n_classes': {'value': 3},
+        'dataset': {'value': 'OPM Nottingham'},
+    },
+}
+
+pprint(sweep_config)
+sweep_id = wandb.sweep(sweep=sweep_config, project='OPM Nottingham Classification')
+
+
+# %%
+def sweep_train(config=None):
+    with wandb.init(config):
+        config = wandb.config
+        ss = StandardScaler()
+        umap = UMAP(
+            n_components=config['n_components'],
+            n_neighbors=config['n_neighbors'],
+            min_dist=config['min_dist'],
+        )
+        svm = SVC(kernel=config['kernel'], C=config['C'])
+
+        pipe = Pipeline([('Scaler', ss), ('UMAP', umap), ('SVM', svm)])
+
+        # Reset the scores
+        cv_train_scores = []
+        cv_test_scores = []
+
+        # Define the CV folds
+        skf = StratifiedKFold(n_splits=3, shuffle=True)
+
+        for i, (train_index, test_index) in enumerate(skf.split(X_train, y_train)):
+            # Get the CV folds
+            X_cv_train = X_train[train_index]
+            y_cv_train = y_train[train_index]
+
+            X_cv_test = X_train[test_index]
+            y_cv_test = y_train[test_index]
+
+            # Fit the pipeline
+            pipe.fit(X_cv_train, y_cv_train)
+
+            # Get the accuracy scores
+            cv_train_scores.append(np.round(pipe.score(X_cv_train, y_cv_train), 3))
+            cv_test_scores.append(np.round(pipe.score(X_cv_test, y_cv_test), 3))
+
+            wandb.log({'cv_train_acc': cv_train_scores[-1], 'fold_number': i + 1})
+            wandb.log({'cv_test_acc': cv_test_scores[-1], 'fold_number': i + 1})
+
+        wandb.log({'cv_train_acc_mean': np.mean(cv_train_scores)})
+        wandb.log({'cv_test_acc_mean': np.mean(cv_test_scores)})
+
+
+# Train the classifier.
+wandb.agent(sweep_id=sweep_id, function=sweep_train)
+
 
 # %%
 cv_train_means = []
