@@ -19,8 +19,6 @@ os.environ[
 
 import matplotlib.pyplot as plt
 import mne
-from mne.beamformer import apply_lcmv, make_lcmv
-from mne.datasets import fetch_fsaverage, sample
 from src.base.EEG import EEG
 
 # High-DPI monitor settings
@@ -62,6 +60,7 @@ data_dict = {
 combined_bads = [
     'FR[Z]',
     'FZ[X]',
+    'G0[X]',
     'HF[Y]',
     'HJ[X]',
     'HJ[Y]',
@@ -78,6 +77,7 @@ combined_bads = [
     'LN[Z]',
     'LP[X]',
     'LP[Y]',
+    'LP[Z]',
     'MV[X]',
     'MV[Y]',
     'MV[Z]',
@@ -87,15 +87,24 @@ combined_bads = [
 cropping = (0, None)
 if data_dict['run'] == 'run_3':
     # Crop the end of Run 3 as it includes the beginning of Run 4
-    cropping = (0, 681.449)
+    cropping = (0, 680)
 
 fmin, fmax = 1, 400
 tmin, tmax = -0.5, 2.1
 events = ('roc', 'pap', 'sci')
 
+notch_freqs = {
+    'run_1': (227, 277.15),
+    'run_2': (227, 277.15),  # 182
+    'run_3': (227, 277.15),
+    'run_4': (227, 277.15),
+}
+
 meg = EEG(
     data_dict,
     bp_filt=(fmin, fmax),
+    extra_notch_freqs=notch_freqs[data_dict['run']],
+    notch_params={'notch_widths': 2},
     epoching=(tmin, tmax),
     cropping=cropping,
     events=events,
@@ -103,6 +112,7 @@ meg = EEG(
     bad_chs=combined_bads,
     logger_name='meg_analysis',
 )
+meg.raw.compute_psd().plot()
 
 # %%
 # Plot the MRI <-> MEG alignment
@@ -125,12 +135,6 @@ plot_bem_kwargs = dict(
 )
 
 mne.viz.plot_bem(**plot_bem_kwargs)
-
-# %%
-# Compute the covariance matrices
-data_cov = mne.compute_covariance(meg.epochs, tmin=0.01, tmax=0.25, method='empirical')
-noise_cov = mne.compute_covariance(meg.epochs, tmin=tmin, tmax=0, method='empirical')
-data_cov.plot(meg.epochs.info)
 
 # %%
 # Compute the surface-based source space
@@ -210,6 +214,7 @@ print("Leadfield size : %d sensors x %d dipoles" % leadfield.shape)
 
 # %%
 # Save the forward model
-mne.write_forward_solution('meg_run1-fwd.fif.gz', fwd)
+fname = os.path.join('data', 'forward_model', f'meg_{data_dict["run"]}-fwd.fif.gz')
+mne.write_forward_solution(fname, fwd)
 
 # %%
