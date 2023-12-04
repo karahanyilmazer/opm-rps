@@ -20,8 +20,7 @@ os.environ[
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
-from scipy.stats import zscore
-from sklearn.decomposition import PCA
+import yaml
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -36,81 +35,28 @@ if 'qApp' not in vars():
     qApp = QtWidgets.QApplication(sys.argv)
     plt.matplotlib.rcParams['figure.dpi'] = qApp.desktop().physicalDpiX()
 # %%
-data_dict = {
-    'data_dir': r'C:\Files\Coding\Python\Neuro\data',
-    'paradigm': 'Gesture',
-    'dataset': 'Nottingham Gesture',
-    'device': 'OPM',
-    'subject': 11766,
-    'session': 20230623,  # or 20230622
-    'run': 'run_1',
-}
+# Load the YAML file
+with open('preprocessing_parameters.yaml', 'r') as file:
+    config = yaml.safe_load(file)
 
-cropping = (0, None)
-if data_dict['run'] == 'run_3':
-    # Crop the end of Run 3 as it includes the beginning of Run 4
-    cropping = (0, 681.449)
-
-fmin, fmax = 1, 400
-tmin, tmax = -0.5, 2.1
-events = ('cue_1', 'cue_2', 'cue_3')
-# events = None
-combined_bads = [
-    'FR[Z]',
-    'FZ[X]',
-    'HF[Y]',
-    'HJ[X]',
-    'HJ[Y]',
-    'K9[X]',
-    'KC[Y]',
-    'KC[Z]',
-    'KE[Y]',
-    'KF[Y]',
-    'LB[X]',
-    'LB[Y]',
-    'LF[X]',
-    'LN[X]',
-    'LN[Y]',
-    'LN[Z]',
-    'LP[X]',
-    'LP[Y]',
-    'MV[X]',
-    'MV[Y]',
-    'MV[Z]',
-    'MU[Z]',
-]
+run = 'run_1'
+config['run'] = run
 
 meg = EEG(
-    data_dict,
-    bp_filt=(fmin, fmax),
-    epoching=(tmin, tmax),
-    cropping=cropping,
-    events=events,
-    apply_notch=True,
-    bad_chs=combined_bads,
+    config,
+    bp_filt=(config['fmin'], config['fmax']),
+    epoching=(config['tmin'], config['tmax']),
+    cropping=config['cropping'][run],
+    events=config['events'],
+    apply_notch=config['apply_notch'],
+    extra_notch_freqs=config['notch_freqs'][run],
+    notch_params={'notch_widths': config['notch_widths'][run]},
+    apply_hfc=config['apply_hfc'],
+    bad_chs=config['bad_channels'],
     logger_name='meg_analysis',
 )
 
 # %%
-# First look:
-# Bad channels (Run 1): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z]
-# Bad channels (Run 2): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z]
-# Bad channels (Run 3): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
-# Bad channels (Run 4): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
-
-# Second look:
-# Bad channels (Run 1): LN[X, Y, Z], FZ[X], K9[X], KF[Y], MU[Z], FR[Z]
-# Sus channels (Run 1): FR[X, Y], LB[X, Y], HJ[X], HF[Y], KD[Y], KB[Z]
-
-# Bad channels (Run 2): LN[X, Y, Z], MV[X, Y, Z], LB[X, Y], FZ[X], K9[X], HF[Y], KC[Y], KF[Y], MU[Z]
-# Sus channels (Run 2): G0[X], HJ[X], LF[X], K9[Y], KC[Z]
-
-# Bad channels (Run 3): LN[X, Y, Z], K9[X], FZ[X], MV[X, Y, Z], LB[X, Y], LP[X, Y], HJ[X, Y], KC[Y, Z], KE[Y], KF[Y], MU[Z]
-# Sus channels (Run 3): HO[Z], LF[X]
-
-# Bad channels (Run 4): LN[X, Y, Z], K9[X], FZ[X], LB[X], HJ[X], LP[X], KF[Y], MV[Y, Z], KC[Y, Z], KE[Y], HF[Y], LB[Y], MU[Z]
-# Sus channels (Run 4): G0[X], K9[Z], LM[Z], LP[Z]
-
 x_axis_channels = [ch for ch in meg.raw.ch_names if '[X]' in ch]
 y_axis_channels = [ch for ch in meg.raw.ch_names if '[Y]' in ch]
 z_axis_channels = [ch for ch in meg.raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
@@ -119,10 +65,18 @@ raws = dict()
 raws['x'] = meg.raw.copy().pick(x_axis_channels)
 raws['y'] = meg.raw.copy().pick(y_axis_channels)
 raws['z'] = meg.raw.copy().pick(z_axis_channels)
+
+raws['x'].compute_psd().plot(picks='data')
+raws['y'].compute_psd().plot(picks='data')
+raws['z'].compute_psd().plot(picks='data')
+
+raws['x'].compute_psd().plot(picks='data', average=True)
+raws['y'].compute_psd().plot(picks='data', average=True)
+raws['z'].compute_psd().plot(picks='data', average=True)
 # %%
 # Plotting for sanity check
 # raws['x'].plot(events=events, event_id=event_id, scalings='auto')
-raws['x'].compute_psd().plot(picks='data', exclude='bads', average=True)
+raws['x'].compute_psd().plot(picks='data', average=True)
 # %%
 # Define events of interest
 event_id_subset = {'cue_1': 1, 'cue_2': 2, 'cue_3': 4}
