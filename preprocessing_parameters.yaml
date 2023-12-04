@@ -31,10 +31,10 @@ cropping:
     - null
   run_3:
     - 0
-    - null
+    - 681
   run_4:
     - 0
-    - 681
+    - null
 
 fmin: 1
 fmax: 400
