@@ -1,0 +1,104 @@
+notch_freqs:
+  run_1:
+    - 227
+    - 277.15
+    - 473
+  run_2:
+    - 227
+    - 277.15
+    - 473
+  run_3:
+    - 227
+    - 277.15
+    - 473
+  run_4:
+    - 227
+    - 277.15
+    - 473
+
+notch_widths:
+  run_1: null
+  run_2: null
+  run_3: 2.5
+  run_4: null
+
+cropping:
+  run_1:
+    - 0
+    - null
+  run_2:
+    - 0
+    - null
+  run_3:
+    - 0
+    - null
+  run_4:
+    - 0
+    - 681
+
+fmin: 1
+fmax: 400
+tmin: -0.5
+tmax: 2.1
+events:
+  - "roc"
+  - "pap"
+  - "sci"
+
+apply_notch: True
+apply_hfc: True
+
+data_dir: "C:/Files/Coding/Python/Neuro/data"
+dataset: "Nottingham Gesture"
+paradigm: "Gesture"
+device: "OPM"
+subject: 11766
+session: 20230623
+
+# First look:
+# Bad channels (Run 1): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z]
+# Bad channels (Run 2): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z]
+# Bad channels (Run 3): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
+# Bad channels (Run 4): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
+
+# Second look:
+# Bad channels (Run 1): LN[X, Y, Z], FZ[X], K9[X], KF[Y], MU[Z], FR[Z]
+# Sus channels (Run 1): FR[X, Y], LB[X, Y], HJ[X], HF[Y], KD[Y], KB[Z]
+
+# Bad channels (Run 2): LN[X, Y, Z], MV[X, Y, Z], LB[X, Y], FZ[X], K9[X], HF[Y], KC[Y], KF[Y], MU[Z]
+# Sus channels (Run 2): G0[X], HJ[X], LF[X], K9[Y], KC[Z]
+
+# Bad channels (Run 3): LN[X, Y, Z], K9[X], FZ[X], MV[X, Y, Z], LB[X, Y], LP[X, Y], HJ[X, Y], KC[Y, Z], KE[Y], KF[Y], MU[Z]
+# Sus channels (Run 3): HO[Z], LF[X]
+
+# Bad channels (Run 4): LN[X, Y, Z], K9[X], FZ[X], LB[X], HJ[X], LP[X], KF[Y], MV[Y, Z], KC[Y, Z], KE[Y], HF[Y], LB[Y], MU[Z]
+# Sus channels (Run 4): G0[X], K9[Z], LM[Z], LP[Z]
+
+bad_channels:
+  - "FR[Y]"
+  - "FR[Z]"
+  - "FZ[X]"
+  - "G0[X]"
+  - "HF[Y]"
+  - "HJ[X]"
+  - "HJ[Y]"
+  - "K9[X]"
+  - "KC[Y]"
+  - "KC[Z]"
+  - "KD[Y]"
+  - "KD[Z]"
+  - "KE[Y]"
+  - "KF[Y]"
+  - "LB[X]"
+  - "LB[Y]"
+  - "LF[X]"
+  - "LN[X]"
+  - "LN[Y]"
+  - "LN[Z]"
+  - "LP[X]"
+  - "LP[Y]"
+  - "LP[Z]"
+  - "MV[X]"
+  - "MV[Y]"
+  - "MV[Z]"
+  - "MU[Z]"
