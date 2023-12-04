@@ -166,3 +166,5 @@ figures
 wandb
 MNIST
 lightning_logs
+data
+pickles
