@@ -36,6 +36,25 @@ cropping:
     - 0
     - null
 
+bad_epochs:
+  run_1:
+    # - 394875 # pap
+    - 478477 # sci
+    - 526878 # pap
+    - 531278 # pap
+    # - 777684 # sci
+    - 786484 # sci
+    - 790884 # pap
+    - 795284 # sci
+    - 799684 # roc
+    - 808485 # roc
+    - 812885 # pap
+    - 817285 # roc
+  run_2: []
+  run_3:
+    - 464259 # roc
+  run_4: []
+
 fmin: 1
 fmax: 400
 tmin: -0.5
