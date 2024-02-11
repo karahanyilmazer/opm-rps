@@ -21,6 +21,7 @@ os.environ[
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
+import yaml
 from src.base.EEG import EEG
 from src.preprocessing.FeatureExtractor import FeatureExtractor
 from src.utils.MNELoader import MNELoader
@@ -33,50 +34,24 @@ if 'qApp' not in vars():
     qApp = QtWidgets.QApplication(sys.argv)
     plt.matplotlib.rcParams['figure.dpi'] = qApp.desktop().physicalDpiX()
 # %%
-# First look:
-# Bad channels (Run 1): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z]
-# Bad channels (Run 2): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z]
-# Bad channels (Run 3): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
-# Bad channels (Run 4): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z], LB[X], LB[Y], MV[X], MV[Y], MV[Z], HF[Y], HJ[X]
-
-# Second look:
-# Bad channels (Run 1): LN[X, Y, Z], FZ[X], K9[X], KF[Y], MU[Z], FR[Z]
-# Sus channels (Run 1): FR[X, Y], LB[X, Y], HJ[X], HF[Y], KD[Y], KB[Z]
-
-# Bad channels (Run 2): LN[X, Y, Z], MV[X, Y, Z], LB[X, Y], FZ[X], K9[X], HF[Y], KC[Y], KF[Y], MU[Z]
-# Sus channels (Run 2): G0[X], HJ[X], LF[X], K9[Y], KC[Z]
-
-# Bad channels (Run 3): LN[X, Y, Z], K9[X], FZ[X], MV[X, Y, Z], LB[X, Y], LP[X, Y], HJ[X, Y], KC[Y, Z], KE[Y], KF[Y], MU[Z]
-# Sus channels (Run 3): HO[Z], LF[X]
-
-# Bad channels (Run 4): LN[X, Y, Z], K9[X], FZ[X], LB[X], HJ[X], LP[X], KF[Y], MV[Y, Z], KC[Y, Z], KE[Y], HF[Y], LB[Y], MU[Z]
-# Sus channels (Run 4): G0[X], K9[Z], LM[Z], LP[Z]
+with open('preprocessing_parameters.yaml', 'r') as file:
+    config = yaml.safe_load(file)
 
 raws = []
 event_arrs = []
 
 for run in tqdm(['run_1', 'run_2', 'run_3', 'run_4']):
-    data_dict = {
-        'data_dir': r'C:\Files\Coding\Python\Neuro\data',
-        'paradigm': 'Gesture',
-        'dataset': 'Nottingham Gesture',
-        'device': 'OPM',
-        'subject': 11766,
-        'session': 20230623,  # or 20230622
-        'run': run,
-    }
+    config['run'] = run
 
     # MNE objects
-    mne_loader = MNELoader(data_dict)
+    mne_loader = MNELoader(config)
     raw, event_arr, event_id, device = mne_loader.get_objects()
 
-    cropping = (0, None)
-    if data_dict['run'] == 'run_3':
+    if run == 'run_3':
         # Crop the end of Run 3 as it includes the beginning of Run 4
-        cropping = (0, 681.449)
-        raw.crop(*cropping)
+        raw.crop(*config['cropping'][run])
         # Convert the cropping times to indices
-        low, high = raw.time_as_index(cropping)
+        low, high = raw.time_as_index(config['cropping'][run])
         # Create a Boolean mask for the relevant part of the array
         mask = np.logical_and(event_arr[:, 0] >= low, event_arr[:, 0] <= high)
         # Crop the events array
@@ -90,43 +65,18 @@ raw, event_arr = mne.concatenate_raws(raws, events_list=event_arrs)
 del raws, event_arrs
 
 # %%
-fmin, fmax = 1, 400
-tmin, tmax = -0.5, 2.1
-events = ('cue_1', 'cue_2', 'cue_3')
-combined_bads = [
-    'FR[Z]',
-    'FZ[X]',
-    'HF[Y]',
-    'HJ[X]',
-    'HJ[Y]',
-    'K9[X]',
-    'KC[Y]',
-    'KC[Z]',
-    'KE[Y]',
-    'KF[Y]',
-    'LB[X]',
-    'LB[Y]',
-    'LF[X]',
-    'LN[X]',
-    'LN[Y]',
-    'LN[Z]',
-    'LP[X]',
-    'LP[Y]',
-    'MV[X]',
-    'MV[Y]',
-    'MV[Z]',
-    'MU[Z]',
-]
-
 mne_objects = raw, event_arr, event_id, device
 meg = EEG(
     None,
-    bp_filt=(fmin, fmax),
-    epoching=(tmin, tmax),
-    cropping=cropping,
-    events=events,
-    apply_notch=True,
-    bad_chs=combined_bads,
+    bp_filt=(config['fmin'], config['fmax']),
+    epoching=(config['tmin'], config['tmax']),
+    cropping=config['cropping'][run],
+    events=config['events'],
+    apply_notch=config['apply_notch'],
+    extra_notch_freqs=config['notch_freqs'][run],
+    notch_params={'notch_widths': config['notch_widths'][run]},
+    apply_hfc=config['apply_hfc'],
+    bad_chs=config['bad_channels'],
     mne_objects=mne_objects,
     logger_name='meg_analysis',
 )
