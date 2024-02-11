@@ -53,8 +53,11 @@ meg = EEG(
     notch_params={'notch_widths': config['notch_widths'][run]},
     apply_hfc=config['apply_hfc'],
     bad_chs=config['bad_channels'],
+    bad_epochs=config['bad_epochs'][run],
     logger_name='meg_analysis',
 )
+
+meg.plot_epochs(['KB[X]', 'KB[Y]', 'KB[Z]', 'LG[X]'])
 
 # %%
 x_axis_channels = [ch for ch in meg.raw.ch_names if '[X]' in ch]
