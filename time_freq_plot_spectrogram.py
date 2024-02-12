@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Preprocess OPM data from a single run.  
+Plot the time-frequency spectrogram of the EEG data for different conditions.
 
 @author: Karahan Yilmazer
 """
