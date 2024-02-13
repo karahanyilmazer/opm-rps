@@ -45,6 +45,7 @@ meg = EEG(
     apply_bandpass=False,
     apply_notch=False,
     apply_hfc=True,
+    detrend=config['detrend'],
     epoching=(config['tmin'], config['tmax']),
     cropping=config['cropping'][run],
     events=config['events'],

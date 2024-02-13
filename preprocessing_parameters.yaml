@@ -66,6 +66,7 @@ events:
 
 apply_notch: True
 apply_hfc: True
+detrend: 1
 
 data_dir: "C:/Files/Coding/Python/Neuro/data"
 dataset: "Nottingham Gesture"
