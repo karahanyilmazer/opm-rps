@@ -23,7 +23,6 @@ os.environ['SUBJECTS_DIR'] = os.path.join(
 )
 
 import matplotlib.pyplot as plt
-import mne
 import numpy as np
 from src.base.EEG import EEG
 from tqdm import tqdm
@@ -34,7 +33,7 @@ from yaml import safe_load
 with open('preprocessing_parameters.yaml', 'r') as file:
     config = safe_load(file)
 
-run = 'run_2'
+run = 'run_4'
 config['run'] = run
 
 # Read in the data
@@ -105,6 +104,7 @@ npl_pap = data_pap - erp_pap[:, np.newaxis]
 npl_sci = data_sci - erp_sci[:, np.newaxis]
 
 # Plot the ERP
+plt.figure()
 plt.plot(time, erp_roc, label='Rock')
 plt.plot(time, erp_pap, label='Paper')
 plt.plot(time, erp_sci, label='Scissors')
@@ -139,18 +139,19 @@ wave_time = np.arange(0, 2 + 1 / srate, 1 / srate)
 wave_time = np.r_[-wave_time[::-1], wave_time[1:]]
 
 # Convolution parameters
-n_data = len(all_roc)
 n_kern = len(wave_time)
-n_conv = n_data + n_kern - 1
+n_conv_roc = np.prod(roc_shape) + n_kern - 1
+n_conv_pap = np.prod(pap_shape) + n_kern - 1
+n_conv_sci = np.prod(sci_shape) + n_kern - 1
 half_wave = (len(wave_time) - 1) // 2
 
 # FFT of the data
-rocX = np.fft.fft(all_roc, n_conv)
-papX = np.fft.fft(all_pap, n_conv)
-sciX = np.fft.fft(all_sci, n_conv)
-roc_nplX = np.fft.fft(all_roc_npl, n_conv)
-pap_nplX = np.fft.fft(all_pap_npl, n_conv)
-sci_nplX = np.fft.fft(all_sci_npl, n_conv)
+rocX = np.fft.fft(all_roc, n_conv_roc)
+papX = np.fft.fft(all_pap, n_conv_pap)
+sciX = np.fft.fft(all_sci, n_conv_sci)
+roc_nplX = np.fft.fft(all_roc_npl, n_conv_roc)
+pap_nplX = np.fft.fft(all_pap_npl, n_conv_pap)
+sci_nplX = np.fft.fft(all_sci_npl, n_conv_sci)
 
 # Initialize the TF matrix
 # 1st dim: total/NPL
@@ -166,18 +167,19 @@ for fi in tqdm(range(len(freqs))):
         -(wave_time**2) / (2 * s[fi] ** 2)
     )
 
-    # FFT of the wavelet
-    cmwX = np.fft.fft(cmw, n_conv)
-    cmwX = cmwX / cmwX[np.argmax(np.abs(cmwX))]
-
     # Iterate over the conditions
-    for i, (dataX, nplX, data_shape) in enumerate(
+    for i, (dataX, nplX, data_shape, n_conv) in enumerate(
         zip(
             [rocX, papX, sciX],
             [roc_nplX, pap_nplX, sci_nplX],
             [roc_shape, pap_shape, sci_shape],
+            [n_conv_roc, n_conv_pap, n_conv_sci],
         )
     ):
+        # FFT of the wavelet
+        cmwX = np.fft.fft(cmw, n_conv)
+        cmwX = cmwX / cmwX[np.argmax(np.abs(cmwX))]
+
         # Run convolution, trim edges, and reshape to 2D (time X trials)
         as_total = np.fft.ifft(dataX * cmwX)
         as_total = as_total[half_wave:-half_wave]
@@ -200,9 +202,9 @@ for fi in tqdm(range(len(freqs))):
 def plot_tf_matrices(cond, tf_slice, time, freqs, cmap, dB=False):
     fig, axs = plt.subplots(2, 3)
 
-    title_suffix = 'in dB' if dB else ''
+    title_suffix = ' in dB' if dB else ''
     fig_suffix = '-dB' if dB else ''
-    fig.suptitle(f'Time-Frequency Analysis {title_suffix} ({cond})')
+    fig.suptitle(f'Time-Frequency Analysis{title_suffix} ({cond})')
 
     titles = [
         'Total Power',
