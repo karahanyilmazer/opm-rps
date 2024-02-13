@@ -137,8 +137,6 @@ s /= 2 * np.pi * freqs
 # Create the wavelet time vector
 wave_time = np.arange(0, 2 + 1 / srate, 1 / srate)
 wave_time = np.r_[-wave_time[::-1], wave_time[1:]]
-# wave_time = np.arange(0, 2 * srate + 1) / srate
-# wave_time = wave_time - np.mean(wave_time)
 
 # Convolution parameters
 n_data = len(all_roc)
@@ -196,31 +194,47 @@ for fi in tqdm(range(len(freqs))):
         tf[1, 0, i, fi, :] = np.mean(np.abs(as_npl) ** 2, axis=1)
         tf[1, 1, i, fi, :] = np.abs(np.mean(np.exp(1j * np.angle(as_npl)), axis=1))
 
+
 # %%
 # Plot the TF matrices for each condition
-def plot_tf_matrices(cond, tf_slice, time, freqs, cmap):
+def plot_tf_matrices(cond, tf_slice, time, freqs, cmap, dB=False):
     fig, axs = plt.subplots(2, 3)
-    fig.suptitle(f'Time-Frequency Analysis ({cond})')
-    
-    titles = ['Total Power', 'Non-Phase-Locked Power', 'Phase-Locked Power',
-              'Total ITPC', 'Non-Phase-Locked ITPC', 'Phase-Locked ITPC']
-    
+
+    title_suffix = 'in dB' if dB else ''
+    fig_suffix = '-dB' if dB else ''
+    fig.suptitle(f'Time-Frequency Analysis {title_suffix} ({cond})')
+
+    titles = [
+        'Total Power',
+        'Non-Phase-Locked Power',
+        'Phase-Locked Power',
+        'Total ITPC',
+        'Non-Phase-Locked ITPC',
+        'Phase-Locked ITPC',
+    ]
+
     for i, ax in enumerate(axs.flat):
         row, col = divmod(i, 3)
-        print(row, col)
-        if col == 2:  # For Phase-Locked plots, subtract the non-phase-locked from the total
+        # For Phase-Locked plots, subtract the non-phase-locked from the total
+        if col == 2:
             data = tf_slice[0, row, :, :] - tf_slice[1, row, :, :]
         else:
             data = tf_slice[col, row, :, :]
+
+        # Plot the TF matrix
         ax.contourf(time, freqs, data, 40, cmap=cmap)
+
+        # Plot customization
         ax.set_title(titles[i])
         if row == 1:
             ax.set_xlabel('Time (s)')
         if col == 0:
             ax.set_ylabel('Frequency (Hz)')
-    
+
     plt.tight_layout()
-    plt.savefig(os.path.join('figures', f'tf_{cond.lower()[:3]}-{config['run']}.png'))
+    plt.savefig(
+        os.path.join('img', f'tf_{cond.lower()[:3]}-{config["run"]}{fig_suffix}.png')
+    )
     plt.show()
 
 
@@ -228,37 +242,24 @@ plot_tf_matrices('Rock', tf[:, :, 0, :, :], time, freqs, cmap)
 plot_tf_matrices('Paper', tf[:, :, 1, :, :], time, freqs, cmap)
 plot_tf_matrices('Scissors', tf[:, :, 2, :, :], time, freqs, cmap)
 
-
 # %%
 # Get the baseline window
 base_win = [-0.45, -0.25]
 base_idx = [np.argmin(np.abs(time - base)) for base in base_win]
 
 # Initialize dB normalized TF matrix
-tf_db = np.zeros_like(tf)
+tf_db = tf.copy()
 
 # dB normalization of the TF matrix
-for i in range(3):
-    tf_db[i, :, :] = 10 * np.log10(
-        tf[i, :, :] / np.mean(tf[i, :, base_idx[0] : base_idx[1]], axis=1)[:, None]
-    )
+for i in tqdm(range(3)):  # Conditions
+    for j in range(2):  # Total/NPL
+        tf_db[j, 0, i, :, :] = 10 * np.log10(
+            tf_db[j, 0, i, :, :]
+            / np.mean(tf_db[j, 0, i, :, base_idx[0] : base_idx[1]], axis=1)[:, None]
+        )
 
-# Plot the TF matrices
-fig, axs = plt.subplots(1, 3)
-c = axs[0].contourf(time, freqs, tf_db[0, :, :], 40, cmap=cmap)
-axs[0].set_title('Rock')
-axs[0].set_xlabel('Time (s)')
-axs[0].set_ylabel('Frequency (Hz)')
-
-c = axs[1].contourf(time, freqs, tf_db[1, :, :], 40, cmap=cmap)
-axs[1].set_title('Paper')
-axs[1].set_xlabel('Time (s)')
-
-c = axs[2].contourf(time, freqs, tf_db[2, :, :], 40, cmap=cmap)
-axs[2].set_title('Scissors')
-axs[2].set_xlabel('Time (s)')
-
-plt.tight_layout()
-plt.show()
+plot_tf_matrices('Rock', tf_db[:, :, 0, :, :], time, freqs, cmap, dB=True)
+plot_tf_matrices('Paper', tf_db[:, :, 1, :, :], time, freqs, cmap, dB=True)
+plot_tf_matrices('Scissors', tf_db[:, :, 2, :, :], time, freqs, cmap, dB=True)
 
 # %%
