@@ -163,6 +163,7 @@ cython_debug/
 .vscode
 *.code-workspace
 figures
+img
 wandb
 MNIST
 lightning_logs
