@@ -12,29 +12,27 @@ Plot the time-frequency spectrogram of the EEG data for different conditions.
 import os
 import sys
 
-sys.path.insert(0, r'C:\Files\Coding\Python\Neuro\eeg_classes')
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-os.environ[
-    'SUBJECTS_DIR'
-] = r'C:\Files\Coding\Python\Neuro\data\Gesture\Nottingham\MRI\Segmentation'
+from utils import get_base_dir, get_cmap, set_fig_dpi, set_style
+
+# Set figure and path settings
+base_dir, cmap, _, _ = get_base_dir(), get_cmap('parula'), set_style(), set_fig_dpi()
+sys.path.insert(0, os.path.join(base_dir, 'eeg-classes'))
+sys.path.insert(0, os.path.join(base_dir, 'data'))
+os.environ['SUBJECTS_DIR'] = os.path.join(
+    base_dir, 'data', 'Gesture', 'Nottingham', 'MRI', 'Segmentation'
+)
 
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
-import yaml
 from src.base.EEG import EEG
 from tqdm import tqdm
-
-from utils import get_cmap, set_fig_dpi, set_style
-
-# Set figure settings
-set_fig_dpi(), set_style()
-cmap = get_cmap('parula')
+from yaml import safe_load
 
 # %%
 # Load the YAML file
 with open('preprocessing_parameters.yaml', 'r') as file:
-    config = yaml.safe_load(file)
+    config = safe_load(file)
 
 run = 'run_2'
 config['run'] = run
