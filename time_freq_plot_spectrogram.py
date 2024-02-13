@@ -60,7 +60,9 @@ x_chs = [ch for ch in meg.raw.ch_names if '[X]' in ch]
 y_chs = [ch for ch in meg.raw.ch_names if '[Y]' in ch]
 z_chs = [ch for ch in meg.raw.ch_names if '[Z]' in ch and 'Trigger' not in ch]
 
-raw_x = meg.raw.copy().pick(x_chs)
+# raw_x = meg.raw.copy().pick(x_chs)
+# raw_y = meg.raw.copy().pick(y_chs)
+# raw_z = meg.raw.copy().pick(z_chs)
 
 epochs_x = meg.epochs.copy().pick(x_chs)
 epochs_y = meg.epochs.copy().pick(y_chs)
@@ -72,9 +74,9 @@ time = epochs_x.times
 srate = epochs_x.info['sfreq']
 
 # Get the data for different conditions
-data_roc = epochs_x['roc'].get_data()
-data_pap = epochs_x['pap'].get_data()
-data_sci = epochs_x['sci'].get_data()
+data_roc = epochs_x['roc'].get_data(copy=True)
+data_pap = epochs_x['pap'].get_data(copy=True)
+data_sci = epochs_x['sci'].get_data(copy=True)
 
 # Get the channel(s) of interest
 chs = ['KB[X]']  # One channel
@@ -82,16 +84,27 @@ chs = ['KB[X]']  # One channel
 
 # Get the channel indices
 ch_idx = [epochs_x.ch_names.index(ch) for ch in chs]
+ch_idx = ch_idx[0] if len(ch_idx) == 1 else ch_idx  # If there's only one channel
 
 # Get the trials data for the channel of interest
 data_roc = np.squeeze(data_roc[:, ch_idx, :]).T
 data_pap = np.squeeze(data_pap[:, ch_idx, :]).T
 data_sci = np.squeeze(data_sci[:, ch_idx, :]).T
 
+# Get the shape of the data (samples x trials)
+roc_shape = data_roc.shape
+pap_shape = data_pap.shape
+sci_shape = data_sci.shape
+
 # Get the ERPs
 erp_roc = np.mean(data_roc, axis=1)
 erp_pap = np.mean(data_pap, axis=1)
 erp_sci = np.mean(data_sci, axis=1)
+
+# Get the non-phase locked data
+npl_roc = data_roc - erp_roc[:, np.newaxis]
+npl_pap = data_pap - erp_pap[:, np.newaxis]
+npl_sci = data_sci - erp_sci[:, np.newaxis]
 
 # Plot the ERP
 plt.plot(time, erp_roc, label='Rock')
@@ -108,20 +121,26 @@ plt.show()
 all_roc = data_roc.reshape(-1, order='F')
 all_pap = data_pap.reshape(-1, order='F')
 all_sci = data_sci.reshape(-1, order='F')
+all_roc_npl = npl_roc.reshape(-1, order='F')
+all_pap_npl = npl_pap.reshape(-1, order='F')
+all_sci_npl = npl_sci.reshape(-1, order='F')
 
 # Wavelet parameters
-min_freq = 1  # in Hz
-max_freq = 40  # in Hz
+min_freq = 2  # in Hz
+max_freq = 50  # in Hz
 n_freqs = 40  # in count
-
 freqs = np.linspace(min_freq, max_freq, n_freqs)
 
-# Variable number of cycles: 4 at low frequencies, 13 at high frequencies
-range_cycles = [4, 13]
-n_cycles = np.logspace(np.log10(range_cycles[0]), np.log10(range_cycles[1]), n_freqs)
+# Variable number of cycles: 4 at low frequencies, 10 at high frequencies
+range_cycles = [4, 10]
+s = np.logspace(np.log10(range_cycles[0]), np.log10(range_cycles[1]), n_freqs)
+s /= 2 * np.pi * freqs
 
-wave_time = np.arange(0, 2 * srate + 1) / srate
-wave_time = wave_time - np.mean(wave_time)
+# Create the wavelet time vector
+wave_time = np.arange(0, 2 + 1 / srate, 1 / srate)
+wave_time = np.r_[-wave_time[::-1], wave_time[1:]]
+# wave_time = np.arange(0, 2 * srate + 1) / srate
+# wave_time = wave_time - np.mean(wave_time)
 
 # Convolution parameters
 n_data = len(all_roc)
@@ -133,34 +152,162 @@ half_wave = (len(wave_time) - 1) // 2
 rocX = np.fft.fft(all_roc, n_conv)
 papX = np.fft.fft(all_pap, n_conv)
 sciX = np.fft.fft(all_sci, n_conv)
+roc_nplX = np.fft.fft(all_roc_npl, n_conv)
+pap_nplX = np.fft.fft(all_pap_npl, n_conv)
+sci_nplX = np.fft.fft(all_sci_npl, n_conv)
 
 # Initialize the TF matrix
-tf = np.zeros((3, n_freqs, len(time)))
+# 1st dim: total/NPL
+# 2nd dim: power/ITPC
+# 3rd dim: conditions
+# 4th dim: frequencies
+# 5th dim: time
+tf = np.zeros((2, 2, 3, n_freqs, len(time)))
 
-for cyci in tqdm(range(len(n_cycles))):
-    for fi in range(n_freqs):
-        # Create wavelet
-        s = n_cycles[cyci] / (2 * np.pi * freqs[fi])
-        cmw = np.exp(2 * 1j * np.pi * freqs[fi] * time) * np.exp(
-            -(time**2) / (2 * s**2)
+for fi in tqdm(range(len(freqs))):
+    # Create wavelet
+    cmw = np.exp(2 * 1j * np.pi * freqs[fi] * wave_time) * np.exp(
+        -(wave_time**2) / (2 * s[fi] ** 2)
+    )
+
+    # FFT of the wavelet
+    cmwX = np.fft.fft(cmw, n_conv)
+    cmwX = cmwX / cmwX[np.argmax(np.abs(cmwX))]
+
+    # Iterate over the conditions
+    for i, (dataX, nplX, data_shape) in enumerate(
+        zip(
+            [rocX, papX, sciX],
+            [roc_nplX, pap_nplX, sci_nplX],
+            [roc_shape, pap_shape, sci_shape],
         )
+    ):
+        # Run convolution, trim edges, and reshape to 2D (time X trials)
+        as_total = np.fft.ifft(dataX * cmwX)
+        as_total = as_total[half_wave:-half_wave]
+        as_total = as_total.reshape(data_shape, order='F')
 
-        # FFT of the wavelet
-        cmwX = np.fft.fft(cmw, n_conv)
-        cmwX = cmwX / cmwX[np.argmax(np.abs(cmwX))]
+        as_npl = np.fft.ifft(nplX * cmwX)
+        as_npl = as_npl[half_wave:-half_wave]
+        as_npl = as_npl.reshape(data_shape, order='F')
 
-        # Iterate over the conditions
-        for i, (dataX, data) in enumerate(
-            zip([rocX, papX, sciX], [data_roc, data_pap, data_sci])
-        ):
-            # Run convolution, trim edges, and reshape to 2D (time X trials)
-            comp_sig = np.fft.ifft(dataX * cmwX)
-            comp_sig = comp_sig[half_wave:-half_wave]
-            comp_sig = comp_sig.reshape(data.shape, order='F')
+        # Average power and phase over trials and put in matrix
+        tf[0, 0, i, fi, :] = np.mean(np.abs(as_total) ** 2, axis=1)
+        tf[0, 1, i, fi, :] = np.abs(np.mean(np.exp(1j * np.angle(as_total)), axis=1))
 
-            # Average power over trials and put in matrix
-            tf[i, fi, :] = np.mean(np.abs(comp_sig) ** 2, axis=1)
+        tf[1, 0, i, fi, :] = np.mean(np.abs(as_npl) ** 2, axis=1)
+        tf[1, 1, i, fi, :] = np.abs(np.mean(np.exp(1j * np.angle(as_npl)), axis=1))
 
+# %%
+# Plot the TF matrices for the rock condition
+fig, axs = plt.subplots(2, 3)
+
+fig.suptitle('Time-Frequency Analysis (Rock)')
+
+c = axs[0, 0].contourf(time, freqs, tf[0, 0, 0, :, :], 40, cmap=cmap)
+axs[0, 0].set_title('Total Power')
+axs[0, 0].set_ylabel('Frequency (Hz)')
+
+c = axs[0, 1].contourf(time, freqs, tf[1, 0, 0, :, :], 40, cmap=cmap)
+axs[0, 1].set_title('Non-Phase-Locked Power')
+
+c = axs[0, 2].contourf(
+    time, freqs, tf[0, 0, 0, :, :] - tf[1, 0, 0, :, :], 40, cmap=cmap
+)
+axs[0, 2].set_title('Phase-Locked Power')
+
+c = axs[1, 0].contourf(time, freqs, tf[0, 1, 0, :, :], 40, cmap=cmap)
+axs[1, 0].set_title('Total ITPC')
+axs[1, 0].set_xlabel('Time (s)')
+axs[1, 0].set_ylabel('Frequency (Hz)')
+
+c = axs[1, 1].contourf(time, freqs, tf[1, 1, 0, :, :], 40, cmap=cmap)
+axs[1, 1].set_title('Non-Phase-Locked ITPC')
+axs[1, 1].set_xlabel('Time (s)')
+
+c = axs[1, 2].contourf(
+    time, freqs, tf[0, 1, 0, :, :] - tf[1, 1, 0, :, :], 40, cmap=cmap
+)
+axs[1, 2].set_title('Phase-Locked ITPC')
+axs[1, 2].set_xlabel('Time (s)')
+
+plt.tight_layout()
+plt.savefig(os.path.join('figures', 'tf_roc-run_2.png'))
+plt.show()
+
+# %%
+# Plot the TF matrices for the paper condition
+fig, axs = plt.subplots(2, 3)
+
+fig.suptitle('Time-Frequency Analysis (Paper)')
+
+c = axs[0, 0].contourf(time, freqs, tf[0, 0, 1, :, :], 40, cmap=cmap)
+axs[0, 0].set_title('Total Power')
+axs[0, 0].set_ylabel('Frequency (Hz)')
+
+c = axs[0, 1].contourf(time, freqs, tf[1, 0, 1, :, :], 40, cmap=cmap)
+axs[0, 1].set_title('Non-Phase-Locked Power')
+
+c = axs[0, 2].contourf(
+    time, freqs, tf[0, 0, 1, :, :] - tf[1, 0, 1, :, :], 40, cmap=cmap
+)
+axs[0, 2].set_title('Phase-Locked Power')
+
+c = axs[1, 0].contourf(time, freqs, tf[0, 1, 1, :, :], 40, cmap=cmap)
+axs[1, 0].set_title('Total ITPC')
+axs[1, 0].set_xlabel('Time (s)')
+axs[1, 0].set_ylabel('Frequency (Hz)')
+
+c = axs[1, 1].contourf(time, freqs, tf[1, 1, 1, :, :], 40, cmap=cmap)
+axs[1, 1].set_title('Non-Phase-Locked ITPC')
+axs[1, 1].set_xlabel('Time (s)')
+
+c = axs[1, 2].contourf(
+    time, freqs, tf[0, 1, 1, :, :] - tf[1, 1, 1, :, :], 40, cmap=cmap
+)
+axs[1, 2].set_title('Phase-Locked ITPC')
+axs[1, 2].set_xlabel('Time (s)')
+
+plt.tight_layout()
+plt.savefig(os.path.join('figures', 'tf_pap-run_2.png'))
+plt.show()
+
+# %%
+# Plot the TF matrices for the scissors condition
+fig, axs = plt.subplots(2, 3)
+
+fig.suptitle('Time-Frequency Analysis (Scissors)')
+
+c = axs[0, 0].contourf(time, freqs, tf[0, 0, 2, :, :], 40, cmap=cmap)
+axs[0, 0].set_title('Total Power')
+axs[0, 0].set_ylabel('Frequency (Hz)')
+
+c = axs[0, 1].contourf(time, freqs, tf[1, 0, 2, :, :], 40, cmap=cmap)
+axs[0, 1].set_title('Non-Phase-Locked Power')
+
+c = axs[0, 2].contourf(
+    time, freqs, tf[0, 0, 2, :, :] - tf[1, 0, 2, :, :], 40, cmap=cmap
+)
+axs[0, 2].set_title('Phase-Locked Power')
+
+c = axs[1, 0].contourf(time, freqs, tf[0, 1, 2, :, :], 40, cmap=cmap)
+axs[1, 0].set_title('Total ITPC')
+axs[1, 0].set_xlabel('Time (s)')
+axs[1, 0].set_ylabel('Frequency (Hz)')
+
+c = axs[1, 1].contourf(time, freqs, tf[1, 1, 2, :, :], 40, cmap=cmap)
+axs[1, 1].set_title('Non-Phase-Locked ITPC')
+axs[1, 1].set_xlabel('Time (s)')
+
+c = axs[1, 2].contourf(
+    time, freqs, tf[0, 1, 2, :, :] - tf[1, 1, 2, :, :], 40, cmap=cmap
+)
+axs[1, 2].set_title('Phase-Locked ITPC')
+axs[1, 2].set_xlabel('Time (s)')
+
+plt.tight_layout()
+plt.savefig(os.path.join('figures', 'tf_sci-run_2.png'))
+plt.show()
 # %%
 # Get the baseline window
 base_win = [-0.45, -0.25]
