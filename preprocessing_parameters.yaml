@@ -59,6 +59,9 @@ fmin: 1
 fmax: 400
 tmin: -0.5
 tmax: 2.1
+baseline_window:
+  - -0.45
+  - -0.25
 events:
   - "roc"
   - "pap"
@@ -66,8 +69,10 @@ events:
 
 apply_notch: True
 apply_hfc: True
+detrend: 1
 
-data_dir: "C:/Files/Coding/Python/Neuro/data"
+data_dir_win: "C:/Files/Coding/Python/Neuro"
+base_dir_mac: "/Users/karahan/coding/python/neuro"
 dataset: "Nottingham Gesture"
 paradigm: "Gesture"
 device: "OPM"
@@ -98,6 +103,28 @@ bad_channels:
   - "FR[Z]"
   - "FZ[X]"
   - "G0[X]"
+  - "G1[X]"
+  - "G1[Y]"
+  - "G1[Z]"
+  - "HP[X]"
+  - "HP[Y]"
+  - "HP[Z]"
+  - "KA[X]"
+  - "KA[Y]"
+  - "KA[Z]"
+  - "LA[X]"
+  - "LA[Y]"
+  - "LA[Z]"
+  - "LD[X]"
+  - "LD[Y]"
+  - "LD[Z]"
+  - "LB[Z]"
+  - "LE[X]"
+  - "LE[Y]"
+  - "LE[Z]"
+  - "LO[X]"
+  - "LO[Y]"
+  - "LO[Z]"
   - "HF[Y]"
   - "HJ[X]"
   - "HJ[Y]"
@@ -121,3 +148,29 @@ bad_channels:
   - "MV[Y]"
   - "MV[Z]"
   - "MU[Z]"
+
+motor_channels:
+  - "KB[X]"
+  - "FV[X]"
+  - "LJ[X]"
+  - "LQ[X]"
+  - "LI[X]"
+  - "I7[X]"
+  - "FW[X]"
+  - "HI[X]"
+  - "KB[Y]"
+  - "FV[Y]"
+  - "LJ[Y]"
+  - "LQ[Y]"
+  - "LI[Y]"
+  - "I7[Y]"
+  - "FW[Y]"
+  - "HI[Y]"
+  - "KB[Z]"
+  - "FV[Z]"
+  - "LJ[Z]"
+  - "LQ[Z]"
+  - "LI[Z]"
+  - "I7[Z]"
+  - "FW[Z]"
+  - "HI[Z]"
