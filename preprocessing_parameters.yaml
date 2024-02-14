@@ -71,7 +71,7 @@ apply_notch: True
 apply_hfc: True
 detrend: 1
 
-data_dir_win: "C:/Files/Coding/Python/Neuro"
+base_dir_win: "C:/Files/Coding/Python/Neuro"
 base_dir_mac: "/Users/karahan/coding/python/neuro"
 dataset: "Nottingham Gesture"
 paradigm: "Gesture"
