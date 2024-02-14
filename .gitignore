@@ -163,8 +163,10 @@ cython_debug/
 .vscode
 *.code-workspace
 figures
+img
 wandb
 MNIST
 lightning_logs
 data
 pickles
+.DS_Store

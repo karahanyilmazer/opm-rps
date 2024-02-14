@@ -13,6 +13,7 @@ import os
 import sys
 
 sys.path.insert(0, r'C:\Files\Coding\Python\Neuro\eeg_classes')
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 os.environ[
     'SUBJECTS_DIR'
 ] = r'C:\Files\Coding\Python\Neuro\data\Gesture\Nottingham\MRI\Segmentation'
@@ -28,12 +29,12 @@ from sklearn.svm import SVC
 from src.base.EEG import EEG
 from src.preprocessing.FeatureExtractor import FeatureExtractor
 
-# High-DPI monitor settings
-if 'qApp' not in vars():
-    from matplotlib.backends.qt_compat import QtWidgets
+from utils import get_cmap, set_fig_dpi, set_style
 
-    qApp = QtWidgets.QApplication(sys.argv)
-    plt.matplotlib.rcParams['figure.dpi'] = qApp.desktop().physicalDpiX()
+# Set figure settings
+set_fig_dpi(), set_style()
+cmap = get_cmap('parula')
+
 # %%
 # Load the YAML file
 with open('preprocessing_parameters.yaml', 'r') as file:
