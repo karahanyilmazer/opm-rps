@@ -33,52 +33,124 @@ from umap import UMAP
 # %%
 # Load the TF matrices
 dl = DataLoader(os.getcwd())
-X_tf_roc_1x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_1-X'))
-X_tf_roc_2x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_2-X'))
-X_tf_roc_3x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_3-X'))
-X_tf_roc_4x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_4-X'))
-X_tf_pap_1x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_1-X'))
-X_tf_pap_2x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_2-X'))
-X_tf_pap_3x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_3-X'))
-X_tf_pap_4x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_4-X'))
-X_tf_sci_1x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_1-X'))
-X_tf_sci_2x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_2-X'))
-X_tf_sci_3x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_3-X'))
-X_tf_sci_4x = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_4-X'))
+X_tf_roc_1x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_1-down-X')
+)
+X_tf_roc_2x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_2-down-X')
+)
+X_tf_roc_3x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_3-down-X')
+)
+X_tf_roc_4x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_4-down-X')
+)
+X_tf_pap_1x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_1-down-X')
+)
+X_tf_pap_2x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_2-down-X')
+)
+X_tf_pap_3x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_3-down-X')
+)
+X_tf_pap_4x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_4-down-X')
+)
+X_tf_sci_1x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_1-down-X')
+)
+X_tf_sci_2x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_2-down-X')
+)
+X_tf_sci_3x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_3-down-X')
+)
+X_tf_sci_4x = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_4-down-X')
+)
 
-X_tf_roc_1y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_1-Y'))
-X_tf_roc_2y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_2-Y'))
-X_tf_roc_3y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_3-Y'))
-X_tf_roc_4y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_4-Y'))
-X_tf_pap_1y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_1-Y'))
-X_tf_pap_2y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_2-Y'))
-X_tf_pap_3y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_3-Y'))
-X_tf_pap_4y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_4-Y'))
-X_tf_sci_1y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_1-Y'))
-X_tf_sci_2y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_2-Y'))
-X_tf_sci_3y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_3-Y'))
-X_tf_sci_4y = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_4-Y'))
+X_tf_roc_1y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_1-down-Y')
+)
+X_tf_roc_2y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_2-down-Y')
+)
+X_tf_roc_3y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_3-down-Y')
+)
+X_tf_roc_4y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_4-down-Y')
+)
+X_tf_pap_1y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_1-down-Y')
+)
+X_tf_pap_2y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_2-down-Y')
+)
+X_tf_pap_3y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_3-down-Y')
+)
+X_tf_pap_4y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_4-down-Y')
+)
+X_tf_sci_1y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_1-down-Y')
+)
+X_tf_sci_2y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_2-down-Y')
+)
+X_tf_sci_3y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_3-down-Y')
+)
+X_tf_sci_4y = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_4-down-Y')
+)
 
-X_tf_roc_1z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_1-Z'))
-X_tf_roc_2z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_2-Z'))
-X_tf_roc_3z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_3-Z'))
-X_tf_roc_4z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_roc-run_4-Z'))
-X_tf_pap_1z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_1-Z'))
-X_tf_pap_2z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_2-Z'))
-X_tf_pap_3z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_3-Z'))
-X_tf_pap_4z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_pap-run_4-Z'))
-X_tf_sci_1z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_1-Z'))
-X_tf_sci_2z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_2-Z'))
-X_tf_sci_3z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_3-Z'))
-X_tf_sci_4z = dl.load_pkl(os.path.join('tf_matrices', 'single', 'tf_dB_sci-run_4-Z'))
+X_tf_roc_1z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_1-down-Z')
+)
+X_tf_roc_2z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_2-down-Z')
+)
+X_tf_roc_3z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_3-down-Z')
+)
+X_tf_roc_4z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_roc-run_4-down-Z')
+)
+X_tf_pap_1z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_1-down-Z')
+)
+X_tf_pap_2z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_2-down-Z')
+)
+X_tf_pap_3z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_3-down-Z')
+)
+X_tf_pap_4z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_pap-run_4-down-Z')
+)
+X_tf_sci_1z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_1-down-Z')
+)
+X_tf_sci_2z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_2-down-Z')
+)
+X_tf_sci_3z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_3-down-Z')
+)
+X_tf_sci_4z = dl.load_pkl(
+    os.path.join('tf_matrices', 'single', 'down', 'dB', 'tf_dB_sci-run_4-down-Z')
+)
 
 # %%
 roc_x = np.concatenate(
     (
-        X_tf_roc_1x[0, :, :, :],
-        X_tf_roc_2x[0, :, :, :],
-        X_tf_roc_3x[0, :, :, :],
-        X_tf_roc_4x[0, :, :, :],
+        X_tf_roc_1x,
+        X_tf_roc_2x,
+        X_tf_roc_3x,
+        X_tf_roc_4x,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -86,10 +158,10 @@ roc_x = roc_x.reshape(roc_x.shape[0], -1)
 
 pap_x = np.concatenate(
     (
-        X_tf_pap_1x[0, :, :, :],
-        X_tf_pap_2x[0, :, :, :],
-        X_tf_pap_3x[0, :, :, :],
-        X_tf_pap_4x[0, :, :, :],
+        X_tf_pap_1x,
+        X_tf_pap_2x,
+        X_tf_pap_3x,
+        X_tf_pap_4x,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -97,10 +169,10 @@ pap_x = pap_x.reshape(pap_x.shape[0], -1)
 
 sci_x = np.concatenate(
     (
-        X_tf_sci_1x[0, :, :, :],
-        X_tf_sci_2x[0, :, :, :],
-        X_tf_sci_3x[0, :, :, :],
-        X_tf_sci_4x[0, :, :, :],
+        X_tf_sci_1x,
+        X_tf_sci_2x,
+        X_tf_sci_3x,
+        X_tf_sci_4x,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -108,10 +180,10 @@ sci_x = sci_x.reshape(sci_x.shape[0], -1)
 
 roc_y = np.concatenate(
     (
-        X_tf_roc_1y[0, :, :, :],
-        X_tf_roc_2y[0, :, :, :],
-        X_tf_roc_3y[0, :, :, :],
-        X_tf_roc_4y[0, :, :, :],
+        X_tf_roc_1y,
+        X_tf_roc_2y,
+        X_tf_roc_3y,
+        X_tf_roc_4y,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -119,10 +191,10 @@ roc_y = roc_y.reshape(roc_y.shape[0], -1)
 
 pap_y = np.concatenate(
     (
-        X_tf_pap_1y[0, :, :, :],
-        X_tf_pap_2y[0, :, :, :],
-        X_tf_pap_3y[0, :, :, :],
-        X_tf_pap_4y[0, :, :, :],
+        X_tf_pap_1y,
+        X_tf_pap_2y,
+        X_tf_pap_3y,
+        X_tf_pap_4y,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -130,10 +202,10 @@ pap_y = pap_y.reshape(pap_y.shape[0], -1)
 
 sci_y = np.concatenate(
     (
-        X_tf_sci_1y[0, :, :, :],
-        X_tf_sci_2y[0, :, :, :],
-        X_tf_sci_3y[0, :, :, :],
-        X_tf_sci_4y[0, :, :, :],
+        X_tf_sci_1y,
+        X_tf_sci_2y,
+        X_tf_sci_3y,
+        X_tf_sci_4y,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -141,10 +213,10 @@ sci_y = sci_y.reshape(sci_y.shape[0], -1)
 
 roc_z = np.concatenate(
     (
-        X_tf_roc_1z[0, :, :, :],
-        X_tf_roc_2z[0, :, :, :],
-        X_tf_roc_3z[0, :, :, :],
-        X_tf_roc_4z[0, :, :, :],
+        X_tf_roc_1z,
+        X_tf_roc_2z,
+        X_tf_roc_3z,
+        X_tf_roc_4z,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -152,10 +224,10 @@ roc_z = roc_z.reshape(roc_z.shape[0], -1)
 
 pap_z = np.concatenate(
     (
-        X_tf_pap_1z[0, :, :, :],
-        X_tf_pap_2z[0, :, :, :],
-        X_tf_pap_3z[0, :, :, :],
-        X_tf_pap_4z[0, :, :, :],
+        X_tf_pap_1z,
+        X_tf_pap_2z,
+        X_tf_pap_3z,
+        X_tf_pap_4z,
     ),
     axis=2,
 ).transpose(2, 0, 1)
@@ -163,10 +235,10 @@ pap_z = pap_z.reshape(pap_z.shape[0], -1)
 
 sci_z = np.concatenate(
     (
-        X_tf_sci_1z[0, :, :, :],
-        X_tf_sci_2z[0, :, :, :],
-        X_tf_sci_3z[0, :, :, :],
-        X_tf_sci_4z[0, :, :, :],
+        X_tf_sci_1z,
+        X_tf_sci_2z,
+        X_tf_sci_3z,
+        X_tf_sci_4z,
     ),
     axis=2,
 ).transpose(2, 0, 1)
