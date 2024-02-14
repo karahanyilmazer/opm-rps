@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Extract and analyze CSP features from all runs.
+Extract CSP features from all runs.
 
 @author: Karahan Yilmazer
 """
@@ -40,6 +40,9 @@ epochs_z = mne.read_epochs(os.path.join('pickles/epochs/all_runs_z-epo.fif.gz'))
 
 # %%
 # Load the YAML file
+with open('preprocessing_parameters.yaml', 'r') as file:
+    bad_epochs_idx = safe_load(file)['bad_epoch_idx']
+
 with open('analysis_parameters.yaml', 'r') as file:
     config = safe_load(file)
 
@@ -125,9 +128,7 @@ plt.show()
 
 # %%
 # Apply the filter to the epochs
-epochs_filt = epochs.copy().filter(
-    l_freq=f_range[0], h_freq=f_range[1], method='fir', fir_design='firwin'
-)
+
 
 # %%
 # Apply the filter to random noise
