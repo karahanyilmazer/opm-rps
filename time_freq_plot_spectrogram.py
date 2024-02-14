@@ -11,6 +11,7 @@ Plot the time-frequency spectrogram of the EEG data for different conditions.
 # !%autoreload 2
 import os
 import sys
+from pickle import dump
 
 from utils import get_base_dir, get_cmap, set_fig_dpi, set_style
 
@@ -33,7 +34,7 @@ from yaml import safe_load
 with open('preprocessing_parameters.yaml', 'r') as file:
     config = safe_load(file)
 
-run = 'run_4'
+run = 'run_1'
 config['run'] = run
 
 # Read in the data
@@ -298,5 +299,14 @@ for i in tqdm(range(3)):  # Conditions
 plot_tf_matrices('Rock', tf_db[:, :, 0, :, :], time, freqs, cmap, dB=True)
 plot_tf_matrices('Paper', tf_db[:, :, 1, :, :], time, freqs, cmap, dB=True)
 plot_tf_matrices('Scissors', tf_db[:, :, 2, :, :], time, freqs, cmap, dB=True)
+
+# %%
+# Save the TF matrices to pickle files
+for file, var in zip([f'tf-{config["axis"]}', f'tf_dB-{config["axis"]}'], [tf, tf_db]):
+    file = os.path.join('pickles', 'feature_matrices', file + '.pkl')
+    # Open a file to dump the data
+    with open(file, 'wb') as pkl_file:
+        # Dump the list to the pickle file
+        dump(var, pkl_file)
 
 # %%
