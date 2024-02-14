@@ -199,39 +199,59 @@ for fi in tqdm(range(len(freqs))):
 
 # %%
 # Plot the TF matrices for each condition
-def plot_tf_matrices(cond, tf_slice, time, freqs, cmap, dB=False):
+def plot_tf_matrices(cond, tf, time, freqs, cmap, dB=False):
     fig, axs = plt.subplots(2, 3)
-
     title_suffix = ' in dB' if dB else ''
     fig_suffix = '-dB' if dB else ''
     fig.suptitle(f'Time-Frequency Analysis{title_suffix} ({cond})')
 
-    titles = [
-        'Total Power',
-        'Non-Phase-Locked Power',
-        'Phase-Locked Power',
-        'Total ITPC',
-        'Non-Phase-Locked ITPC',
-        'Phase-Locked ITPC',
-    ]
+    if dB:
+        clims = [
+            np.array([-6, 3.2]),
+            np.array([-6, 3.2]),
+            np.array([-0.5, 2.8]),
+            np.array([0, 1]),
+            np.array([0, 1]),
+            np.array([0, 1]),
+        ]
+    else:
+        clims = [
+            np.array([0, 1]) * 1e-26,
+            np.array([0, 1]) * 1e-26,
+            np.array([0, 2]) * 1e-27,
+            np.array([0, 1]),
+            np.array([0, 1]),
+            np.array([0, 1]),
+        ]
 
-    for i, ax in enumerate(axs.flat):
-        row, col = divmod(i, 3)
-        # For Phase-Locked plots, subtract the non-phase-locked from the total
-        if col == 2:
-            data = tf_slice[0, row, :, :] - tf_slice[1, row, :, :]
-        else:
-            data = tf_slice[col, row, :, :]
+    c = axs[0, 0].contourf(time, freqs, tf[0, 0, :, :], 40, cmap=cmap)
+    c.set_clim(clims[0])
+    axs[0, 0].set_title('Total Power')
+    axs[0, 0].set_ylabel('Frequency (Hz)')
 
-        # Plot the TF matrix
-        ax.contourf(time, freqs, data, 40, cmap=cmap)
+    c = axs[0, 1].contourf(time, freqs, tf[1, 0, :, :], 40, cmap=cmap)
+    c.set_clim(clims[1])
+    axs[0, 1].set_title('Non-Phase-Locked Power')
 
-        # Plot customization
-        ax.set_title(titles[i])
-        if row == 1:
-            ax.set_xlabel('Time (s)')
-        if col == 0:
-            ax.set_ylabel('Frequency (Hz)')
+    c = axs[0, 2].contourf(time, freqs, tf[0, 0, :, :] - tf[1, 0, :, :], 40, cmap=cmap)
+    c.set_clim(clims[2])
+    axs[0, 2].set_title('Phase-Locked Power')
+
+    c = axs[1, 0].contourf(time, freqs, tf[0, 1, :, :], 40, cmap=cmap)
+    c.set_clim(clims[3])
+    axs[1, 0].set_title('Total ITPC')
+    axs[1, 0].set_xlabel('Time (s)')
+    axs[1, 0].set_ylabel('Frequency (Hz)')
+
+    c = axs[1, 1].contourf(time, freqs, tf[1, 1, :, :], 40, cmap=cmap)
+    c.set_clim(clims[4])
+    axs[1, 1].set_title('Non-Phase-Locked ITPC')
+    axs[1, 1].set_xlabel('Time (s)')
+
+    c = axs[1, 2].contourf(time, freqs, tf[0, 1, :, :] - tf[1, 1, :, :], 40, cmap=cmap)
+    c.set_clim(clims[5])
+    axs[1, 2].set_title('Phase-Locked ITPC')
+    axs[1, 2].set_xlabel('Time (s)')
 
     plt.tight_layout()
     plt.savefig(
