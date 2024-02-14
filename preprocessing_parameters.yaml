@@ -59,6 +59,9 @@ fmin: 1
 fmax: 400
 tmin: -0.5
 tmax: 2.1
+baseline_window:
+  - -0.45
+  - -0.25
 events:
   - "roc"
   - "pap"

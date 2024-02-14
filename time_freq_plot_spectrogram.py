@@ -282,7 +282,7 @@ plot_tf_matrices('Scissors', tf[:, :, 2, :, :], time, freqs, cmap)
 
 # %%
 # Get the baseline window
-base_win = [-0.45, -0.25]
+base_win = config['baseline_window']
 base_idx = [np.argmin(np.abs(time - base)) for base in base_win]
 
 # Initialize dB normalized TF matrix
