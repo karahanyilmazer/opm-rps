@@ -302,8 +302,17 @@ plot_tf_matrices('Scissors', tf_db[:, :, 2, :, :], time, freqs, cmap, dB=True)
 
 # %%
 # Save the TF matrices to pickle files
-for file, var in zip([f'tf-{config["axis"]}', f'tf_dB-{config["axis"]}'], [tf, tf_db]):
-    file = os.path.join('pickles', 'feature_matrices', file + '.pkl')
+for file, var in zip(
+    [
+        f'tf-run_{config["run"]}-{config["axis"]}',
+        f'tf_dB-run_{config["run"]}-{config["axis"]}',
+    ],
+    [
+        tf,
+        tf_db,
+    ],
+):
+    file = os.path.join('pickles', 'tf_matrices', file + '.pkl')
     # Open a file to dump the data
     with open(file, 'wb') as pkl_file:
         # Dump the list to the pickle file
