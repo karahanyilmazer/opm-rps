@@ -36,6 +36,7 @@ cropping:
     - 0
     - null
 
+# Time stamps of bad epochs
 bad_epochs:
   run_1:
     # - 394875 # pap
@@ -61,7 +62,7 @@ tmin: -0.5
 tmax: 2.1
 baseline_window:
   - -0.45
-  - -0.25
+  - -0.15
 events:
   - "roc"
   - "pap"
@@ -71,13 +72,88 @@ apply_notch: True
 apply_hfc: True
 detrend: 1
 
-data_dir_win: "C:/Files/Coding/Python/Neuro"
+base_dir_win: "C:/Files/Coding/Python/Neuro"
 base_dir_mac: "/Users/karahan/coding/python/neuro"
 dataset: "Nottingham Gesture"
 paradigm: "Gesture"
 device: "OPM"
 subject: 11766
 session: 20230623
+
+# Epoch index of bad epochs after concatenating all runs
+bad_epoch_idx:
+  - 82
+  - 83
+  - 84
+  - 85
+  - 86
+  - 87
+  - 88
+  - 89
+  - 90
+  - 91
+  - 92
+  - 93
+  - 94
+  - 95
+  - 96
+  - 97
+  - 98
+  - 99
+  - 100
+  - 101
+  - 102
+  - 103
+  - 104
+  - 105
+  - 106
+  - 107
+  - 108
+  - 109
+  - 110
+  - 111
+  - 112
+  - 113
+  - 114
+  - 115
+  - 123
+  - 132
+  - 135
+  - 145
+  - 146
+  - 147
+  - 148
+  - 162
+  - 163
+  - 164
+  - 165
+  - 166
+  - 167
+  - 168
+  - 169
+  - 170
+  - 171
+  - 172
+  - 173
+  - 174
+  - 175
+  - 176
+  - 177
+  - 178
+  - 184
+  - 185
+  - 186
+  - 187
+  - 189
+  - 190
+  - 275
+  - 294
+  - 351
+  - 406
+  - 409
+  - 461
+  - 572
+  - 576
 
 # First look:
 # Bad channels (Run 1): LN[X], LN[Y], LN[Z], FZ[X], K9[X], KF[Y], MU[Z]
@@ -106,6 +182,9 @@ bad_channels:
   - "G1[X]"
   - "G1[Y]"
   - "G1[Z]"
+  - "HF[X]"
+  - "HF[Z]"
+  - "HO[Z]"
   - "HP[X]"
   - "HP[Y]"
   - "HP[Z]"
@@ -141,13 +220,16 @@ bad_channels:
   - "LN[X]"
   - "LN[Y]"
   - "LN[Z]"
+  - "LM[Y]"
   - "LP[X]"
   - "LP[Y]"
   - "LP[Z]"
   - "MV[X]"
   - "MV[Y]"
   - "MV[Z]"
+  - "MU[X]"
   - "MU[Z]"
+  - "I5[Y]"
 
 motor_channels:
   - "KB[X]"
