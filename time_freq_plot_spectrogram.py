@@ -65,22 +65,34 @@ epochs_x = meg.epochs.copy().pick(x_chs)
 epochs_y = meg.epochs.copy().pick(y_chs)
 epochs_z = meg.epochs.copy().pick(z_chs)
 del meg
+
 # %%
+# Choose the axis
+config['axis'] = 'X'
+
+# Choose the epochs object
+if config['axis'] == 'X':
+    epochs = epochs_x
+elif config['axis'] == 'Y':
+    epochs = epochs_y
+elif config['axis'] == 'Z':
+    epochs = epochs_z
+
 # Get the time vector
-time = epochs_x.times
-srate = epochs_x.info['sfreq']
+time = epochs.times
+srate = epochs.info['sfreq']
 
 # Get the data for different conditions
-data_roc = epochs_x['roc'].get_data(copy=True)
-data_pap = epochs_x['pap'].get_data(copy=True)
-data_sci = epochs_x['sci'].get_data(copy=True)
+data_roc = epochs['roc'].get_data(copy=True)
+data_pap = epochs['pap'].get_data(copy=True)
+data_sci = epochs['sci'].get_data(copy=True)
 
 # Get the channel(s) of interest
-chs = ['KB[X]']  # One channel
-# chs = [ch for ch in config['motor_channels'] if '[X]' in ch]  # Motor channels
+chs = [f'KB[{config["axis"]}]']  # One channel
+# chs = [ch for ch in config['motor_channels'] if [config["axis"]] in ch]  # Motor chans
 
 # Get the channel indices
-ch_idx = [epochs_x.ch_names.index(ch) for ch in chs]
+ch_idx = [epochs.ch_names.index(ch) for ch in chs]
 ch_idx = ch_idx[0] if len(ch_idx) == 1 else ch_idx  # If there's only one channel
 
 # Get the trials data for the channel of interest
@@ -255,7 +267,10 @@ def plot_tf_matrices(cond, tf, time, freqs, cmap, dB=False):
 
     plt.tight_layout()
     plt.savefig(
-        os.path.join('img', f'tf_{cond.lower()[:3]}-{config["run"]}{fig_suffix}.png')
+        os.path.join(
+            'img',
+            f'tf_{cond.lower()[:3]}-{config["run"]}{fig_suffix}-{config["axis"]}.png',
+        )
     )
     plt.show()
 
