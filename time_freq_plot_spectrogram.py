@@ -213,7 +213,7 @@ for fi in tqdm(range(len(freqs))):
 # %%
 # Plot the TF matrices for each condition
 def plot_tf_matrices(cond, tf, time, freqs, cmap, dB=False):
-    fig, axs = plt.subplots(2, 3)
+    fig, axs = plt.subplots(2, 3, figsize=(21, 14))
     title_suffix = ' in dB' if dB else ''
     fig_suffix = '-dB' if dB else ''
     fig.suptitle(f'Time-Frequency Analysis{title_suffix} ({cond})')
@@ -238,33 +238,41 @@ def plot_tf_matrices(cond, tf, time, freqs, cmap, dB=False):
         ]
 
     c = axs[0, 0].contourf(time, freqs, tf[0, 0, :, :], 40, cmap=cmap)
-    c.set_clim(clims[0])
+    # c.set_clim(clims[0])
+    fig.colorbar(c, ax=axs[0, 0])
     axs[0, 0].set_title('Total Power')
     axs[0, 0].set_ylabel('Frequency (Hz)')
 
     c = axs[0, 1].contourf(time, freqs, tf[1, 0, :, :], 40, cmap=cmap)
-    c.set_clim(clims[1])
+    # c.set_clim(clims[1])
+    fig.colorbar(c, ax=axs[0, 1])
     axs[0, 1].set_title('Non-Phase-Locked Power')
 
     c = axs[0, 2].contourf(time, freqs, tf[0, 0, :, :] - tf[1, 0, :, :], 40, cmap=cmap)
-    c.set_clim(clims[2])
+    # c.set_clim(clims[2])
+    fig.colorbar(c, ax=axs[0, 2])
     axs[0, 2].set_title('Phase-Locked Power')
 
     c = axs[1, 0].contourf(time, freqs, tf[0, 1, :, :], 40, cmap=cmap)
     c.set_clim(clims[3])
+    fig.colorbar(c, ax=axs[1, 0])
     axs[1, 0].set_title('Total ITPC')
     axs[1, 0].set_xlabel('Time (s)')
     axs[1, 0].set_ylabel('Frequency (Hz)')
 
     c = axs[1, 1].contourf(time, freqs, tf[1, 1, :, :], 40, cmap=cmap)
     c.set_clim(clims[4])
+    fig.colorbar(c, ax=axs[1, 1])
     axs[1, 1].set_title('Non-Phase-Locked ITPC')
     axs[1, 1].set_xlabel('Time (s)')
 
     c = axs[1, 2].contourf(time, freqs, tf[0, 1, :, :] - tf[1, 1, :, :], 40, cmap=cmap)
     c.set_clim(clims[5])
+    fig.colorbar(c, ax=axs[1, 2])
     axs[1, 2].set_title('Phase-Locked ITPC')
     axs[1, 2].set_xlabel('Time (s)')
+
+    fig.subplots_adjust(left=0.05, right=0.95)
 
     plt.tight_layout()
     plt.savefig(
