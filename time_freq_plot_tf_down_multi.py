@@ -37,9 +37,9 @@ with open('preprocessing_parameters.yaml', 'r') as file:
     config = safe_load(file)
 
 # Concatenate the epochs
-# epochs_x = read_epochs(os.path.join('pickles/epochs/all_runs_x-epo.fif.gz'))
-# epochs_y = read_epochs(os.path.join('pickles/epochs/all_runs_y-epo.fif.gz'))
-epochs_z = read_epochs(os.path.join('pickles/epochs/all_runs_z-epo.fif.gz'))
+# epochs_x = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_x-epo.fif.gz'))
+# epochs_y = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_y-epo.fif.gz'))
+epochs_z = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_z-epo.fif.gz'))
 
 # %%
 # Choose the axis
@@ -98,8 +98,8 @@ plt.plot(time, erp_sci, label='Scissors')
 plt.xlabel('Time (s)')
 plt.ylabel('Amplitude')
 plt.title('ERPs Over the Motor Cortex')
-plt.savefig(os.path.join('img', 'erp', f'erp-all_runs-{config["axis"]}.png'))
 plt.legend()
+plt.savefig(os.path.join('img', 'erp', f'erp-all_runs-{config["axis"]}.png'))
 plt.show()
 
 # %%
@@ -210,10 +210,28 @@ def plot_tf_matrices(cond, tf, time, freqs, cmap, dB=False, apply_clim=True, sav
     fig.suptitle(f'Time-Frequency Analysis ({cond})')
 
     if dB:
-        if config['axis'] == 'Z':
+        if config['axis'] == 'X':
             levels = [
-                np.linspace(-8, 4, 100),
-                np.linspace(-8, 4, 100),
+                np.linspace(-4.5, 1.4, 100),
+                np.linspace(-4.5, 1.4, 100),
+                np.linspace(-0.4, 1.3, 100),
+                np.linspace(-0.1, 1, 100),
+                np.linspace(-0.1, 1, 100),
+                np.linspace(-0.1, 1, 100),
+            ]
+        elif config['axis'] == 'Y':
+            levels = [
+                np.linspace(-6.2, 3.6, 100),
+                np.linspace(-6.5, 1.4, 100),
+                np.linspace(-0.3, 3.9, 100),
+                np.linspace(-0.1, 1, 100),
+                np.linspace(-0.1, 1, 100),
+                np.linspace(-0.1, 1, 100),
+            ]
+        elif config['axis'] == 'Z':
+            levels = [
+                np.linspace(-8, 4.2, 100),
+                np.linspace(-8, 4.2, 100),
                 np.linspace(-0.8, 3.4, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
