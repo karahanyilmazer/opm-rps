@@ -273,6 +273,30 @@ for train_index, test_index in skf.split(X_train, y_train):
     cv_train_scores.append(np.round(pipe.score(X_cv_train, y_cv_train), 3))
     cv_test_scores.append(np.round(pipe.score(X_cv_test, y_cv_test), 3))
 
+    dim_red = pipe.steps[0]
+    dim_red_name = pipe.steps[0][0]
+    dim_red_train = np.mean(dim_red.transform(X_cv_train), axis=2)
+    dim_red_test = np.mean(dim_red.transform(X_cv_test), axis=2)
+
+    fig, axs = plt.subplots(1, 2, figsize=(10, 6))
+    for label in np.unique(y_cv_train):
+        idx = np.where(y_cv_train == label)
+        axs[0].scatter(dim_red_train[idx, 0], dim_red_train[idx, 1], label=label)
+        axs[0].set_title('Train Set')
+        axs[0].set_xlabel(f'{dim_red_name} Component 1')
+        axs[0].set_ylabel(f'{dim_red_name} Component 2')
+        axs[0].legend()
+
+        idx = np.where(y_cv_test == label)
+        axs[1].scatter(dim_red_test[idx, 0], dim_red_test[idx, 1], label=label)
+        axs[1].set_title('Test Set')
+        axs[1].set_xlabel(f'{dim_red_name} Component 1')
+        axs[1].set_ylabel(f'{dim_red_name} Component 2')
+        axs[1].legend()
+
+    plt.tight_layout()
+    plt.show()
+
 print('TRAIN')
 print(cv_train_scores)
 print(np.mean(cv_train_scores))
