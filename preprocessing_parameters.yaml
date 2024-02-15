@@ -82,7 +82,7 @@ session: 20230623
 
 # Epoch index of bad epochs after concatenating all runs
 bad_epoch_idx:
-  - "X"
+  X:
     - 81
     - 82
     - 83
@@ -167,7 +167,7 @@ bad_epoch_idx:
     - 571
     - 572
     - 677
-  - "Y"
+  Y:
     - 5
     - 7
     - 23
@@ -272,7 +272,7 @@ bad_epoch_idx:
     - 677
     - 708
     - 718
-  - "Z"
+  Z:
     - 82
     - 83
     - 84
