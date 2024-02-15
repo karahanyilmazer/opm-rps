@@ -9,12 +9,58 @@ Load OPM data, convert for use in MNE.
 import json
 import os
 import re
+import sys
 from typing import List, Tuple
 
+import matplotlib.pyplot as plt
 import mne
 import numpy as np
 import pandas as pd
+import scienceplots
+from matplotlib.colors import LinearSegmentedColormap
 from mne.io.constants import FIFF
+from yaml import safe_load
+
+
+def get_base_dir():
+    # Load the config file
+    with open('preprocessing_parameters.yaml', 'r') as file:
+        config = safe_load(file)
+
+    # Get the base directory
+    platform = sys.platform
+    if platform == 'win32':
+        base_dir = config['base_dir_win']
+    elif platform == 'darwin':
+        base_dir = config['base_dir_mac']
+
+    return base_dir
+
+
+def set_style(notebook=True, grid=False):
+    # Set the style to science
+    args = ['science', 'no-latex']
+    if grid:
+        args.append('grid')
+    if notebook:
+        args.append('notebook')
+    plt.style.use(args)
+
+
+def set_fig_dpi():
+    # Get the current OS
+    platform = sys.platform
+    if platform == 'win32':
+        # Set the figure dpi to 260
+        plt.matplotlib.rcParams['figure.dpi'] = 260
+
+
+def get_cmap(name):
+    # Load the (parula) cmap
+    with open(f'{name}.yaml', 'r') as file:
+        cmap = safe_load(file)['cmap']
+        cmap = LinearSegmentedColormap.from_list(name, cmap)
+    return cmap
 
 
 def read_old_cMEG(filename: str) -> np.ndarray:
@@ -74,7 +120,7 @@ def find_matching_indices(
         match_idx = np.full(np.size(pd.Series.tolist(sensors)), 0)
         count = 0
         for nn in pd.Series.tolist(sensors):
-            if re.sub("[\W_]+", "", n) == re.sub("[\W_]+", "", nn):
+            if re.sub(r"[\W_]+", "", n) == re.sub(r"[\W_]+", "", nn):
                 match_idx[count] = 1
             count = count + 1
         if np.array(np.where(match_idx == 1)).size > 0:
@@ -263,7 +309,7 @@ def conv_square_window(data: np.ndarray, window_size: int) -> np.ndarray:
 
 def get_mne_data(
     data_dir: str, day="20230623", acq_time="155445", paradigm="gesture"
-) -> Tuple[mne.io.array.array.RawArray, np.ndarray, dict]:
+) -> Tuple[mne.io.RawArray, np.ndarray, dict]:
     """Get data from a cMEG file and convert it to a MNE raw object.
 
     :param subjects_dir: The path to the data directory.

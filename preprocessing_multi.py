@@ -14,6 +14,7 @@ import pickle
 import sys
 
 sys.path.insert(0, r'C:\Files\Coding\Python\Neuro\eeg_classes')
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 os.environ[
     'SUBJECTS_DIR'
 ] = r'C:\Files\Coding\Python\Neuro\data\Gesture\Nottingham\MRI\Segmentation'
@@ -27,12 +28,12 @@ from src.preprocessing.FeatureExtractor import FeatureExtractor
 from src.utils.MNELoader import MNELoader
 from tqdm import tqdm
 
-# High-DPI monitor settings
-if 'qApp' not in vars():
-    from matplotlib.backends.qt_compat import QtWidgets
+from utils import get_cmap, set_fig_dpi, set_style
 
-    qApp = QtWidgets.QApplication(sys.argv)
-    plt.matplotlib.rcParams['figure.dpi'] = qApp.desktop().physicalDpiX()
+# Set figure settings
+set_fig_dpi(), set_style()
+cmap = get_cmap('parula')
+
 # %%
 with open('preprocessing_parameters.yaml', 'r') as file:
     config = yaml.safe_load(file)
@@ -40,7 +41,7 @@ with open('preprocessing_parameters.yaml', 'r') as file:
 raws = []
 event_arrs = []
 
-for run in tqdm(['run_1', 'run_2', 'run_3', 'run_4']):
+for run in tqdm(['run_2', 'run_3', 'run_4']):
     config['run'] = run
 
     # MNE objects
