@@ -238,9 +238,9 @@ epochs.load_data()
 
 # %%
 X = epochs.crop(tmin=config['csp_tmin'], tmax=config['csp_tmax']).get_data(copy=True)
-X = epochs.crop(tmin=0.5, tmax=2).get_data(copy=True)
+# X = epochs.crop(tmin=0.5, tmax=2).get_data(copy=True)
 # X = epochs.get_data(copy=True)
-# y = epochs.events[:, -1]
+y = epochs.events[:, -1]
 # X = epochs[['roc', 'sci']].crop(tmin=0.5, tmax=1.5).get_data(copy=True)
 # y = epochs[['roc', 'sci']].events[:, -1]
 
