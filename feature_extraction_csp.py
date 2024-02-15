@@ -98,6 +98,9 @@ del meg
 # Concatenate the raw
 raw, events = mne.concatenate_raws(raw_list, events_list=events_list)
 
+# Drop trigger channels
+raw.drop_channels([ch for ch in raw.ch_names if 'Trigger' in ch])
+
 # %%
 # Choose the axis
 # config['axis'] = 'Z'
