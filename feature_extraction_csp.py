@@ -42,6 +42,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from src.base.EEG import EEG
 from tqdm import tqdm
+from umap import UMAP
 from yaml import safe_load
 
 # %%
@@ -273,15 +274,19 @@ X_train, X_test, y_train, y_test = train_test_split(
 cv_train_scores = []
 cv_test_scores = []
 
+# skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=50)
 skf = KFold(n_splits=3, shuffle=True, random_state=50)
 
 ss = StandardScaler()
-pca = UnsupervisedSpatialFilter(PCA(), average=False)
+pca = UnsupervisedSpatialFilter(PCA(0.99), average=False)
+umap = UnsupervisedSpatialFilter(UMAP(), average=False)
 svm = SVC(gamma='auto')
 lda = LDA()
 csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
 
-pipe = Pipeline([('PCA', pca), ('CSP', csp), ('SVM', svm)])
+# pipe = Pipeline([('PCA', pca), ('CSP', csp), ('SVM', svm)])
+pipe = Pipeline([('UMAP', umap), ('CSP', csp), ('SVM', lda)])
+# pipe = Pipeline([('PCA', pca), ('LDA', lda)])
 # pipe = Pipeline([('CSP', csp), ('LDA', lda)])
 
 for train_index, test_index in skf.split(X_train, y_train):
@@ -325,5 +330,9 @@ print('TEST')
 print(cv_test_scores)
 print(np.mean(cv_test_scores))
 
+
+# %%
+# Get the test set accuracy
+pipe.score(X_test, y_test)
 
 # %%
