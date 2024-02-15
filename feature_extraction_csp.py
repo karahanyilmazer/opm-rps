@@ -237,10 +237,28 @@ epochs = mne.Epochs(
 )
 epochs.info.normalize_proj()
 epochs.drop(list(bad_epochs_idx))
-epochs.load_data()
 
 # %%
-X = epochs.crop(tmin=config['csp_tmin'], tmax=config['csp_tmax']).get_data(copy=True)
+epochs = mne.read_epochs('all_runs-filt_7_30-epo.fif.gz')
+epochs.load_data()
+epochs.drop_channels([ch for ch in epochs.ch_names if 'Trigger' in ch])
+
+# Get a list of channels for each axis
+x_chs = [ch for ch in epochs.ch_names if '[X]' in ch]
+y_chs = [ch for ch in epochs.ch_names if '[Y]' in ch]
+z_chs = [ch for ch in epochs.ch_names if '[Z]' in ch and 'Trigger' not in ch]
+
+
+# %%
+with open('analysis_parameters.yaml', 'r') as file:
+    config = safe_load(file)
+
+X = (
+    epochs.copy()
+    .pick(z_chs)
+    .crop(tmin=config['csp_tmin'], tmax=config['csp_tmax'])
+    .get_data(copy=True)
+)
 # X = epochs.crop(tmin=0.5, tmax=2).get_data(copy=True)
 # X = epochs.get_data(copy=True)
 y = epochs.events[:, -1]
