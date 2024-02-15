@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import mne
 import numpy as np
 from matplotlib.gridspec import GridSpec
-from mne.decoding import CSP
+from mne.decoding import CSP, UnsupervisedSpatialFilter
 from scipy.signal import filtfilt, firls, hilbert
 from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
@@ -97,21 +97,21 @@ del meg
 
 # Concatenate the raw
 raw, events = mne.concatenate_raws(raw_list, events_list=events_list)
-# raw_x, events = mne.concatenate_raws(raw_x_list, events_list=events_list)
-# raw_y, _ = mne.concatenate_raws(raw_y_list, events_list=events_list)
-# raw_z, _ = mne.concatenate_raws(raw_z_list, events_list=events_list)
 
 # %%
 # Choose the axis
-config['axis'] = 'Z'
+# config['axis'] = 'Z'
 
 # Choose the epochs object
-if config['axis'] == 'X':
-    raw = raw_x
-elif config['axis'] == 'Y':
-    raw = raw_y
-elif config['axis'] == 'Z':
-    raw = raw_z
+# if config['axis'] == 'X':
+# raw = raw_x
+# raw_x, events = mne.concatenate_raws(raw_x_list, events_list=events_list)
+# elif config['axis'] == 'Y':
+# raw = raw_y
+# raw_y, events = mne.concatenate_raws(raw_y_list, events_list=events_list)
+# elif config['axis'] == 'Z':
+# raw = raw_z
+# raw_z, events = mne.concatenate_raws(raw_z_list, events_list=events_list)
 
 # %%
 with open('analysis_parameters.yaml', 'r') as file:
@@ -236,8 +236,13 @@ epochs.info.normalize_proj()
 epochs.drop(list(bad_epochs_idx))
 epochs.load_data()
 
-X = epochs[['roc', 'sci']].crop(tmin=0.5, tmax=1.5).get_data(copy=True)
-y = epochs[['roc', 'sci']].events[:, -1]
+# %%
+X = epochs.crop(tmin=config['csp_tmin'], tmax=config['csp_tmax']).get_data(copy=True)
+X = epochs.crop(tmin=0.5, tmax=2).get_data(copy=True)
+# X = epochs.get_data(copy=True)
+# y = epochs.events[:, -1]
+# X = epochs[['roc', 'sci']].crop(tmin=0.5, tmax=1.5).get_data(copy=True)
+# y = epochs[['roc', 'sci']].events[:, -1]
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=99, stratify=y
@@ -250,11 +255,12 @@ cv_test_scores = []
 skf = KFold(n_splits=3, shuffle=True, random_state=50)
 
 ss = StandardScaler()
+pca = UnsupervisedSpatialFilter(PCA(), average=False)
 svm = SVC(gamma='auto')
 lda = LDA()
-csp = CSP(n_components=4, reg=1e-4, log=True, norm_trace=False)
+csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
 
-pipe = Pipeline([('CSP', csp), ('SVM', svm)])
+pipe = Pipeline([('PCA', pca), ('CSP', csp), ('SVM', svm)])
 # pipe = Pipeline([('CSP', csp), ('LDA', lda)])
 
 for train_index, test_index in skf.split(X_train, y_train):
@@ -273,14 +279,6 @@ print(np.mean(cv_train_scores))
 print('TEST')
 print(cv_test_scores)
 print(np.mean(cv_test_scores))
-
-# Use scikit-learn Pipeline with cross_val_score function
-# scores = cross_val_score(pipe, X_train, y_train, cv=skf, n_jobs=-1)
-
-# Printing the results
-# class_balance = np.mean(y == y[0])
-# class_balance = max(class_balance, 1.0 - class_balance)
-# print(f"Classification accuracy: {np.mean(scores)} / Chance level: {class_balance}")
 
 
 # %%
