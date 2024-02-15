@@ -269,7 +269,7 @@ for train_index, test_index in skf.split(X_train, y_train):
     X_cv_test = X_train[test_index]
     y_cv_test = y_train[test_index]
 
-    pipe.fit(X_train, y_train)
+    pipe.fit(X_cv_train, y_cv_train)
     cv_train_scores.append(np.round(pipe.score(X_cv_train, y_cv_train), 3))
     cv_test_scores.append(np.round(pipe.score(X_cv_test, y_cv_test), 3))
 
