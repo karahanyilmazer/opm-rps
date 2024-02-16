@@ -47,7 +47,9 @@ from yaml import safe_load
 # Read in cleaned epochs
 epochs = mne.read_epochs('all_runs-filt_7_30-epo.fif.gz')
 epochs.load_data()
-epochs.drop_channels([ch for ch in epochs.ch_names if 'Trigger' in ch])
+epochs.drop_channels(
+    [ch for ch in epochs.ch_names if 'Trigger' in ch] + epochs.info['bads']
+)
 
 # Get a list of channels for each axis
 x_chs = [ch for ch in epochs.ch_names if '[X]' in ch]
@@ -60,9 +62,8 @@ with open('analysis_parameters.yaml', 'r') as file:
 
 X = (
     epochs.copy()
-    .pick(z_chs)
-    .crop(tmin=config['csp_tmin'], tmax=config['csp_tmax'])
-    .get_data(copy=True)
+    # .pick(z_chs)
+    .crop(tmin=0.5, tmax=2).get_data(copy=True)
 )
 y = epochs.events[:, -1]
 
@@ -78,7 +79,7 @@ cv_train_scores = []
 cv_test_scores = []
 
 # skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=50)
-skf = KFold(n_splits=3, shuffle=True, random_state=50)
+skf = KFold(n_splits=3, shuffle=True)
 
 ss = StandardScaler()
 pca = UnsupervisedSpatialFilter(PCA(0.99), average=False)
@@ -87,10 +88,11 @@ svm = SVC(gamma='auto')
 lda = LDA()
 csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
 
-# pipe = Pipeline([('PCA', pca), ('CSP', csp), ('SVM', svm)])
-pipe = Pipeline([('UMAP', umap), ('CSP', csp), ('SVM', lda)])
+pipe = Pipeline([('PCA', pca), ('CSP', csp), ('SVM', svm)])
+# pipe = Pipeline([('UMAP', umap), ('CSP', csp), ('SVM', lda)])
 # pipe = Pipeline([('PCA', pca), ('LDA', lda)])
 # pipe = Pipeline([('CSP', csp), ('LDA', lda)])
+# pipe = Pipeline([('CSP', csp), ('SVM', svm)])
 
 for train_index, test_index in skf.split(X_train, y_train):
     X_cv_train = X_train[train_index]
@@ -102,8 +104,7 @@ for train_index, test_index in skf.split(X_train, y_train):
     cv_train_scores.append(np.round(pipe.score(X_cv_train, y_cv_train), 3))
     cv_test_scores.append(np.round(pipe.score(X_cv_test, y_cv_test), 3))
 
-    dim_red = pipe.steps[0]
-    dim_red_name = pipe.steps[0][0]
+    dim_red_name, dim_red = pipe.steps[0]
     dim_red_train = np.mean(dim_red.transform(X_cv_train), axis=2)
     dim_red_test = np.mean(dim_red.transform(X_cv_test), axis=2)
 
