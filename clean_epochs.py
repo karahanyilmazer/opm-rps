@@ -174,6 +174,7 @@ ax4.set_title('Frequency Response')
 ax4.axis('off')
 
 plt.tight_layout()
+plt.savefig('filter_kernel.png')
 plt.show()
 
 # %%
