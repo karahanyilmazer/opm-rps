@@ -16,7 +16,7 @@ fmax: 30
 tmin: -0.5
 tmax: 2.1
 
-csp_tmin: 0
-csp_tmax: 1
+csp_tmin: 0.5
+csp_tmax: 2
 apply_hfc: True
 detrend: 1
