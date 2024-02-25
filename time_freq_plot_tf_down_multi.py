@@ -37,13 +37,13 @@ with open('preprocessing_parameters.yaml', 'r') as file:
     config = safe_load(file)
 
 # Concatenate the epochs
-# epochs_x = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_x-epo.fif.gz'))
+epochs_x = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_x-epo.fif.gz'))
 # epochs_y = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_y-epo.fif.gz'))
-epochs_z = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_z-epo.fif.gz'))
+# epochs_z = read_epochs(os.path.join('pickles', 'epochs', 'all_runs_z-epo.fif.gz'))
 
 # %%
 # Choose the axis
-config['axis'] = 'Z'
+config['axis'] = 'X'
 
 # Choose the epochs object
 if config['axis'] == 'X':
@@ -56,6 +56,11 @@ elif config['axis'] == 'Z':
 # Get the time vector
 time = epochs.times
 srate = epochs.info['sfreq']
+
+# Downsampled time vector
+resolution = 0.007
+times_to_save = np.arange(-0.5, 2.1 + resolution, resolution)
+t_idx = np.argmin(np.abs(time[:, np.newaxis] - times_to_save), axis=0)
 
 # Get the data for different conditions
 data_roc = epochs['roc'].get_data(copy=True)
@@ -212,27 +217,27 @@ def plot_tf_matrices(cond, tf, time, freqs, cmap, dB=False, apply_clim=True, sav
     if dB:
         if config['axis'] == 'X':
             levels = [
-                np.linspace(-4.5, 1.4, 100),
-                np.linspace(-4.5, 1.4, 100),
-                np.linspace(-0.4, 1.3, 100),
+                np.linspace(-8.0, 4.2, 100),
+                np.linspace(-8.0, 4.2, 100),
+                np.linspace(-0.8, 4.2, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
             ]
         elif config['axis'] == 'Y':
             levels = [
-                np.linspace(-6.2, 3.6, 100),
-                np.linspace(-6.5, 1.4, 100),
-                np.linspace(-0.3, 3.9, 100),
+                np.linspace(-8.0, 4.2, 100),
+                np.linspace(-8.0, 4.2, 100),
+                np.linspace(-0.8, 4.2, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
             ]
         elif config['axis'] == 'Z':
             levels = [
-                np.linspace(-8, 4.2, 100),
-                np.linspace(-8, 4.2, 100),
-                np.linspace(-0.8, 3.4, 100),
+                np.linspace(-8.0, 4.2, 100),
+                np.linspace(-8.0, 4.2, 100),
+                np.linspace(-0.8, 4.2, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
                 np.linspace(-0.1, 1, 100),
@@ -365,7 +370,28 @@ for file, var in zip(
         tf_db,
     ],
 ):
-    file = os.path.join('pickles', 'tf_matrices', file + '.pkl')
+    file = os.path.join('pickles', 'tf_matrices', 'multi', 'full', file + '.pkl')
+    # Open a file to dump the data
+    with open(file, 'wb') as pkl_file:
+        # Dump the list to the pickle file
+        dump(var, pkl_file)
+
+# %%
+# Define the file names
+file_names = [
+    f'tf-all_runs-down-{config["axis"]}',
+    f'tf_db-all_runs-down-{config["axis"]}',
+]
+
+# Downsampled TF matrices
+var_names = [
+    tf[:, :, :, :, t_idx],
+    tf_db[:, :, :, :, t_idx],
+]
+
+# Save the TF matrices to pickle files
+for file, var in zip(file_names, var_names):
+    file = os.path.join('pickles', 'tf_matrices', 'multi', 'down', file + '.pkl')
     # Open a file to dump the data
     with open(file, 'wb') as pkl_file:
         # Dump the list to the pickle file

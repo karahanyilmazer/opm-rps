@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Extract CSP features from all runs.
+Clean and save epochs from all runs.
 
 @author: Karahan Yilmazer
 """
@@ -11,7 +11,6 @@ Extract CSP features from all runs.
 # !%autoreload 2
 import os
 import sys
-from pickle import dump
 
 from utils import get_base_dir, get_cmap, set_fig_dpi, set_style
 
@@ -27,21 +26,9 @@ import matplotlib.pyplot as plt
 import mne
 import numpy as np
 from matplotlib.gridspec import GridSpec
-from mne.decoding import CSP
-from scipy.signal import filtfilt, firls, hilbert
-from sklearn.decomposition import PCA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.model_selection import (
-    KFold,
-    StratifiedKFold,
-    cross_val_score,
-    train_test_split,
-)
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
+from scipy.signal import filtfilt, firls
 from src.base.EEG import EEG
-from tqdm import tqdm
+from umap import UMAP
 from yaml import safe_load
 
 # %%
@@ -97,21 +84,24 @@ del meg
 
 # Concatenate the raw
 raw, events = mne.concatenate_raws(raw_list, events_list=events_list)
-# raw_x, events = mne.concatenate_raws(raw_x_list, events_list=events_list)
-# raw_y, _ = mne.concatenate_raws(raw_y_list, events_list=events_list)
-# raw_z, _ = mne.concatenate_raws(raw_z_list, events_list=events_list)
+
+# Drop trigger channels
+raw.drop_channels([ch for ch in raw.ch_names if 'Trigger' in ch])
 
 # %%
 # Choose the axis
-config['axis'] = 'Z'
+# config['axis'] = 'Z'
 
 # Choose the epochs object
-if config['axis'] == 'X':
-    raw = raw_x
-elif config['axis'] == 'Y':
-    raw = raw_y
-elif config['axis'] == 'Z':
-    raw = raw_z
+# if config['axis'] == 'X':
+# raw = raw_x
+# raw_x, events = mne.concatenate_raws(raw_x_list, events_list=events_list)
+# elif config['axis'] == 'Y':
+# raw = raw_y
+# raw_y, events = mne.concatenate_raws(raw_y_list, events_list=events_list)
+# elif config['axis'] == 'Z':
+# raw = raw_z
+# raw_z, events = mne.concatenate_raws(raw_z_list, events_list=events_list)
 
 # %%
 with open('analysis_parameters.yaml', 'r') as file:
@@ -184,6 +174,7 @@ ax4.set_title('Frequency Response')
 ax4.axis('off')
 
 plt.tight_layout()
+plt.savefig('filter_kernel.png')
 plt.show()
 
 # %%
@@ -224,6 +215,7 @@ plt.show()
 raw.load_data()  # Ensure the Raw data is preloaded
 raw._data = filt_sig
 
+# Cut the filtered data into epochs
 epochs = mne.Epochs(
     raw,
     events,
@@ -232,55 +224,7 @@ epochs = mne.Epochs(
     tmax=config['tmax'],
     detrend=config['detrend'],
 )
-epochs.info.normalize_proj()
+# Drop bad epochs
 epochs.drop(list(bad_epochs_idx))
-epochs.load_data()
-
-X = epochs[['roc', 'sci']].crop(tmin=0.5, tmax=1.5).get_data(copy=True)
-y = epochs[['roc', 'sci']].events[:, -1]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=99, stratify=y
-)
-
-# %%‚
-cv_train_scores = []
-cv_test_scores = []
-
-skf = KFold(n_splits=3, shuffle=True, random_state=50)
-
-ss = StandardScaler()
-svm = SVC(gamma='auto')
-lda = LDA()
-csp = CSP(n_components=4, reg=1e-4, log=True, norm_trace=False)
-
-pipe = Pipeline([('CSP', csp), ('SVM', svm)])
-# pipe = Pipeline([('CSP', csp), ('LDA', lda)])
-
-for train_index, test_index in skf.split(X_train, y_train):
-    X_cv_train = X_train[train_index]
-    y_cv_train = y_train[train_index]
-    X_cv_test = X_train[test_index]
-    y_cv_test = y_train[test_index]
-
-    pipe.fit(X_train, y_train)
-    cv_train_scores.append(np.round(pipe.score(X_cv_train, y_cv_train), 3))
-    cv_test_scores.append(np.round(pipe.score(X_cv_test, y_cv_test), 3))
-
-print('TRAIN')
-print(cv_train_scores)
-print(np.mean(cv_train_scores))
-print('TEST')
-print(cv_test_scores)
-print(np.mean(cv_test_scores))
-
-# Use scikit-learn Pipeline with cross_val_score function
-# scores = cross_val_score(pipe, X_train, y_train, cv=skf, n_jobs=-1)
-
-# Printing the results
-# class_balance = np.mean(y == y[0])
-# class_balance = max(class_balance, 1.0 - class_balance)
-# print(f"Classification accuracy: {np.mean(scores)} / Chance level: {class_balance}")
-
-
-# %%
+# Save the cleaned epochs
+epochs.save(f'all_runs-filt_{config["fmin"]}_{config["fmax"]}-epo.fif.gz', fmt='double')
