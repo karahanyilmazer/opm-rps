@@ -1,0 +1,22 @@
+data_dir_win: "C:/Files/Coding/Python/Neuro"
+base_dir_mac: "/Users/karahan/coding/python/neuro"
+dataset: "Nottingham Gesture"
+paradigm: "Gesture"
+device: "OPM"
+subject: 11766
+session: 20230623
+
+events:
+  - "roc"
+  - "pap"
+  - "sci"
+
+fmin: 7
+fmax: 30
+tmin: -0.5
+tmax: 2.1
+
+csp_tmin: 0.5
+csp_tmax: 2
+apply_hfc: True
+detrend: 1
