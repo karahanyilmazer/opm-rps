@@ -45,15 +45,16 @@ ax.set_ylabel(f'{method} value')
 plt.show()
 
 # %%
+# Plot the source activity
 vertno_max, time_max = stc.get_peak(hemi="lh")
 
 surfer_kwargs = dict(
     hemi="lh",
-    clim=dict(kind="value", lims=[8, 12, 15]),
+    clim=dict(kind="value", lims=[1.5, 2.5, 6]),
     views="lateral",
     initial_time=time_max,
     time_unit="s",
-    size=(800, 800),
+    size=(2400, 1600),
     smoothing_steps=10,
 )
 brain = stc.plot(**surfer_kwargs)
@@ -65,12 +66,14 @@ brain.add_foci(
     scale_factor=0.6,
     alpha=0.5,
 )
-brain.add_text(
-    0.1, 0.9, "dSPM (plus location of maximal activation)", "title", font_size=14
+
+brain.save_movie(
+    filename='source_activity.mp4',
+    tmin=-0.05,
+    tmax=0.4,
+    interpolation='linear',
+    time_dilation=20,
+    framerate=10,
+    time_viewer=True,
 )
-
-# The documentation website's movie is generated with:
-# brain.save_movie(..., tmin=0.05, tmax=0.15, interpolation='linear',
-#                  time_dilation=20, framerate=10, time_viewer=True)
-
 # %%
