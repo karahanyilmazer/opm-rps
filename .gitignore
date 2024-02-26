@@ -170,3 +170,6 @@ lightning_logs
 data
 pickles
 .DS_Store
+*.fif
+*.gz
+*.stc
