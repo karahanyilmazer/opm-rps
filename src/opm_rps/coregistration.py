@@ -86,13 +86,10 @@ def scalp_distances(
 ) -> np.ndarray:
     """Distance (m) from each MEG channel to the scalp, negative inside the head.
 
-    Measured along the normal of the nearest vertex of the subject's scalp surface
-    (the first of ``bem/<subject>-head-dense.fif``, ``-head.fif`` or the BEM, as in
-    :func:`mne.dig_mri_distances`). ``trans`` is the head -> MRI transform.
+    Measured along the normal of the nearest vertex of the subject's scalp surface.
+    ``trans`` is the head -> MRI transform.
     """
-    head = mne.get_head_surf(
-        subject, ('head-dense', 'head', 'bem'), subjects_dir=subjects_dir
-    )
+    head = _read_scalp(subject, subjects_dir)
     positions = sensor_positions(info, trans)
     located = np.isfinite(positions).all(axis=1)
     _, nearest = cKDTree(head['rr']).query(positions[located])
@@ -100,3 +97,25 @@ def scalp_distances(
     distances = np.full(len(positions), np.nan)
     distances[located] = np.sum(offset * head['nn'][nearest], axis=1)
     return distances
+
+
+def _read_scalp(subject: str, subjects_dir: str | Path) -> dict:
+    """Scalp surface of the subject (MRI frame, m) with outward vertex normals.
+
+    The first of ``bem/<subject>-head-dense.fif``, ``-head.fif`` or the BEM, as in
+    :func:`mne.dig_mri_distances`, else the watershed surface ``bem/outer_skin.surf``,
+    which :func:`mne.viz.plot_alignment` shows as the head.
+    """
+    try:
+        return mne.get_head_surf(
+            subject, ('head-dense', 'head', 'bem'), subjects_dir=subjects_dir
+        )
+    except OSError:
+        fname = Path(subjects_dir) / subject / 'bem' / 'outer_skin.surf'
+        rr, tris = mne.read_surface(fname)
+    rr = rr / 1000  # mm -> m
+    tri_nn = np.cross(rr[tris[:, 1]] - rr[tris[:, 0]], rr[tris[:, 2]] - rr[tris[:, 0]])
+    nn = np.zeros_like(rr)
+    for corner in tris.T:
+        np.add.at(nn, corner, tri_nn)
+    return dict(rr=rr, tris=tris, nn=nn / np.linalg.norm(nn, axis=1, keepdims=True))

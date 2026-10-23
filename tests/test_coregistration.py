@@ -15,13 +15,8 @@ HEAD_RADIUS = 0.09  # m
 C_RAS = np.array([4.0, -17.0, 25.0])  # scanner RAS of the volume centre (mm)
 
 
-@pytest.fixture(scope='module')
-def subjects_dir(tmp_path_factory):
-    """FreeSurfer subject with a spherical scalp centred on the surface RAS origin."""
-    subjects_dir = tmp_path_factory.mktemp('subjects')
-    (subjects_dir / SUBJECT / 'bem').mkdir(parents=True)
-
-    # Triangulated sphere with outward-facing triangles
+def sphere_mesh():
+    """Scalp: triangulated sphere (m) with outward-facing triangles."""
     golden = np.pi * (3 - np.sqrt(5))
     k = np.arange(4000)
     z = 1 - 2 * (k + 0.5) / k.size
@@ -33,7 +28,16 @@ def subjects_dir(tmp_path_factory):
     normals = np.cross(rr[tris[:, 1]] - rr[tris[:, 0]], rr[tris[:, 2]] - rr[tris[:, 0]])
     inward = np.sum(normals * rr[tris].mean(axis=1), axis=1) < 0
     tris[inward] = tris[inward][:, ::-1]
-    mne.write_head_bem(subjects_dir / SUBJECT / 'bem' / f'{SUBJECT}-head.fif', rr, tris)
+    return rr, tris
+
+
+@pytest.fixture(scope='module')
+def subjects_dir(tmp_path_factory):
+    """FreeSurfer subject with a spherical scalp centred on the surface RAS origin."""
+    subjects_dir = tmp_path_factory.mktemp('subjects')
+    (subjects_dir / SUBJECT / 'bem').mkdir(parents=True)
+    fname = subjects_dir / SUBJECT / 'bem' / f'{SUBJECT}-head.fif'
+    mne.write_head_bem(fname, *sphere_mesh())
     return subjects_dir
 
 
@@ -130,6 +134,21 @@ def test_scalp_distances(tmp_path, subjects_dir):
     expected = np.linalg.norm(helmet - [0, 0, 0.05], axis=1) - HEAD_RADIUS
     np.testing.assert_allclose(distances[::3], expected, atol=1e-3)
     assert (distances < 0).any() and (distances > 0).any()
+
+
+def test_scalp_from_watershed_surface(tmp_path):
+    # Without a head surface FIF file, the watershed bem/outer_skin.surf is used
+    pytest.importorskip('nibabel')  # to write the FreeSurfer surface
+    rr, tris = sphere_mesh()
+    (tmp_path / 'subjects' / 'ws' / 'bem').mkdir(parents=True)
+    mne.write_surface(tmp_path / 'subjects/ws/bem/outer_skin.surf', 1000 * rr, tris)
+    fname, _ = write_recording(tmp_path, 'rec', n_trials=2, radius=0.1)
+    raw, _ = io.read_raw_cmeg(fname)
+    identity = Transform('head', 'mri')
+    distances = coregistration.scalp_distances(
+        raw.info, identity, 'ws', tmp_path / 'subjects'
+    )
+    np.testing.assert_allclose(distances, 0.1 - HEAD_RADIUS, atol=1e-3)
 
 
 def test_read_sensor_transforms(cfg):
