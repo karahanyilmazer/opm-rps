@@ -126,26 +126,20 @@ of 1 Hz (1-s Hamming windows overlapping by half).
 
 ### Source space
 
-The sensor positions come from the HelmConfig sidecar (helmet CAD frame); the
-SensorTransform sidecar maps them to the frame of the coregistration saved at
-acquisition (a 3D head scan or the MRI) and is the identity if none was saved.
-`source_space/coregister.py` computes the head -> MRI transform of the forward model
-(`coregistration` in `config.yaml`) and checks it with the sensor-to-scalp distances
-and a 3D view in `reports/coregistration.html`:
-
-- `identity`: no coregistration; the source estimates are not anatomically aligned
-  and their files are labelled "misaligned".
-- `scanner_ras`: the sensors are in the scanner RAS frame of the MRI, as with a
-  helmet designed on the subject's MRI.
+The sensor positions come from the HelmConfig sidecar. Subject 11766 wore a helmet
+designed on the MRI, so the positions are already in the scanner RAS frame of the
+MRI: the SensorTransform sidecars are the identity and the MRI's `c_ras` is 0.
+`source_space/coregister.py` writes the head -> MRI transform (`coregistration:
+scanner_ras` in `config.yaml`) and checks it with the sensor-to-scalp distances
+(5-24 mm, none inside the head) and a 3D view in `reports/coregistration.html`.
+`coregistration: identity` skips the coregistration; the files are then labelled
+"misaligned".
 
 The noise covariance of the inverse operator is estimated from the pre-cue baseline
 (-0.5 to 0 s) of the cleaned epochs; its rank is reduced by the 8 HFC projectors.
 
 ## Known caveats of the analysis
 
-- **Coregistration not verified on the data yet**: `coregistration` stays `identity`
-  until the real recordings and MRI have been checked with `coregister.py`, so the
-  source estimates are labelled "misaligned".
 - The feature matrices leave out run 1, as the original feature script did from
   2024 on; no reason was recorded. Add `'run_1'` to `RUNS` in
   `features/extract_features.py` to include its 107 good trials.
