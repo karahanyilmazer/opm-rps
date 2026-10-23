@@ -5,9 +5,8 @@ The runs are concatenated, HFC-corrected, notch-filtered (line noise harmonics a
 sensor axis, three feature sets are computed per trial: signal variance, relative
 power in 7 frequency bands, and total Welch power.
 
-Note: the Welch spectra use n_fft=256, i.e. a resolution of sfreq/256 Hz (~4.7 Hz
-at 1200 Hz). The delta, theta and alpha bands then contain a single frequency bin
-and their band power is zero.
+The band power and the total power come from Welch spectra with a resolution of
+1 Hz (1-s Hamming windows overlapping by half).
 
 Output: derivatives/features/features.npz with the arrays var_<axis>, bp_<axis>
 and welch_<axis> (trials x features, axis in x/y/z) and the labels y (trigger codes).

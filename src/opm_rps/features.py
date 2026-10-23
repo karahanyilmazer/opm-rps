@@ -24,41 +24,54 @@ def variance(epochs: mne.BaseEpochs) -> np.ndarray:
     return np.var(_good_channel_data(epochs), axis=-1)
 
 
-def welch_power(epochs: mne.BaseEpochs, n_fft: int = 256) -> np.ndarray:
-    """Total Welch power per trial and channel, shape (n_epochs, n_channels).
+def welch_psd(
+    epochs: mne.BaseEpochs, resolution: float = 1.0
+) -> tuple[np.ndarray, np.ndarray]:
+    """Welch power spectral density of the good channels and its frequencies.
 
-    The power spectral density is integrated over all frequencies with Simpson's
-    rule (unit frequency spacing, as in the original analysis).
+    The spectrum is averaged over Hamming-windowed segments of ``1 / resolution``
+    seconds that overlap by half, giving a frequency resolution of ``resolution`` Hz.
     """
-    psd, _ = psd_array_welch(
-        _good_channel_data(epochs), epochs.info['sfreq'], n_fft=n_fft
+    sfreq = epochs.info['sfreq']
+    n_fft = round(sfreq / resolution)
+    return psd_array_welch(
+        _good_channel_data(epochs), sfreq, n_fft=n_fft, n_overlap=n_fft // 2
     )
-    return simpson(psd, axis=-1)
+
+
+def welch_power(epochs: mne.BaseEpochs, resolution: float = 1.0) -> np.ndarray:
+    """Total power per trial and channel, shape (n_epochs, n_channels).
+
+    The Welch power spectral density is integrated over all frequencies with
+    Simpson's rule.
+    """
+    psd, freqs = welch_psd(epochs, resolution)
+    return simpson(psd, x=freqs, axis=-1)
 
 
 def band_power(
     epochs: mne.BaseEpochs,
     bands: dict[str, tuple[float, float]] = FREQ_BANDS,
     relative: bool = True,
-    n_fft: int = 256,
+    resolution: float = 1.0,
 ) -> np.ndarray:
     """Power per frequency band, shape (n_epochs, n_bands * n_channels).
 
     Columns are ordered band by band: all channels of the first band, then all
     channels of the second band, and so on. With ``relative=True`` the band power is
     divided by the total power.
-
-    Note that the Welch frequency resolution is ``sfreq / n_fft``; bands that contain
-    a single frequency bin have zero power under Simpson's rule.
     """
-    psd, freqs = psd_array_welch(
-        _good_channel_data(epochs), epochs.info['sfreq'], n_fft=n_fft
-    )
-    total = simpson(psd, axis=-1)
+    psd, freqs = welch_psd(epochs, resolution)
+    total = simpson(psd, x=freqs, axis=-1)
     powers = []
-    for f_low, f_high in bands.values():
+    for name, (f_low, f_high) in bands.items():
         in_band = (freqs >= f_low) & (freqs <= f_high)
-        power = simpson(psd[..., in_band], axis=-1)
+        if in_band.sum() < 2:
+            raise ValueError(
+                f'The {name} band ({f_low}-{f_high} Hz) contains fewer than two '
+                f'frequency bins at a resolution of {resolution} Hz.'
+            )
+        power = simpson(psd[..., in_band], x=freqs[in_band], axis=-1)
         powers.append(power / total if relative else power)
     return np.concatenate(powers, axis=1)
 

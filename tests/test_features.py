@@ -1,20 +1,22 @@
 import mne
 import numpy as np
+import pytest
 
 from opm_rps import features
 
 SFREQ = 1200.0
 
 
-def make_epochs(bads=()):
-    """Four epochs of three channels: 50 Hz, 150 Hz and noise."""
+def make_epochs(freqs=(50, 150, None), bads=(), n_times=int(SFREQ)):
+    """Four epochs with one channel per frequency: a sine plus noise (None: noise)."""
     rng = np.random.default_rng(0)
-    times = np.arange(int(SFREQ)) / SFREQ
-    data = 0.1 * rng.normal(size=(4, 3, len(times)))
-    data[:, 0] += np.sin(2 * np.pi * 50 * times)
-    data[:, 1] += np.sin(2 * np.pi * 150 * times)
-    info = mne.create_info(['A[X]', 'B[X]', 'C[X]'], SFREQ, 'mag')
-    epochs = mne.EpochsArray(data, info, verbose=False)
+    times = np.arange(n_times) / SFREQ
+    data = 0.1 * rng.normal(size=(4, len(freqs), len(times)))
+    for ch, freq in enumerate(freqs):
+        if freq is not None:
+            data[:, ch] += np.sin(2 * np.pi * freq * times)
+    names = [f'{chr(ord("A") + ch)}[X]' for ch in range(len(freqs))]
+    epochs = mne.EpochsArray(data, mne.create_info(names, SFREQ, 'mag'), verbose=False)
     epochs.info['bads'] = list(bads)
     return epochs
 
@@ -23,6 +25,13 @@ def test_variance_excludes_bad_channels():
     epochs = make_epochs(bads=['B[X]'])
     expected = np.var(epochs.get_data(picks=['A[X]', 'C[X]']), axis=-1)
     np.testing.assert_allclose(features.variance(epochs), expected)
+
+
+def test_welch_psd_resolution():
+    _, freqs = features.welch_psd(make_epochs(n_times=3121))
+    np.testing.assert_allclose(np.diff(freqs), 1.0)
+    _, freqs = features.welch_psd(make_epochs(), resolution=2.0)
+    np.testing.assert_allclose(np.diff(freqs), 2.0)
 
 
 def test_band_power_is_ordered_band_by_band():
@@ -36,13 +45,29 @@ def test_band_power_is_ordered_band_by_band():
     assert np.all(per_band[:, :, 1].argmax(axis=1) == bands.index('mid_gamma'))
 
 
-def test_bands_with_a_single_bin_have_zero_power():
-    per_band = features.band_power(make_epochs()).reshape(
-        4, len(features.FREQ_BANDS), 3
-    )
-    # sfreq / n_fft = 4.7 Hz: delta, theta and alpha contain one frequency bin
-    assert np.all(per_band[:, :3] == 0)
+def test_band_power_resolves_the_low_frequency_bands():
+    epochs = make_epochs(freqs=(2, 6, 10), n_times=3121)  # 2.6 s, like the epochs
+    per_band = features.band_power(epochs).reshape(4, len(features.FREQ_BANDS), 3)
+    assert np.all(per_band > 0)
+    bands = list(features.FREQ_BANDS)
+    for ch, band in enumerate(['delta', 'theta', 'alpha']):
+        assert np.all(per_band[:, :, ch].argmax(axis=1) == bands.index(band))
 
 
-def test_welch_power():
-    assert features.welch_power(make_epochs(bads=['C[X]'])).shape == (4, 2)
+def test_relative_band_powers_add_up_to_the_power_below_300_hz():
+    epochs = make_epochs(freqs=(10, 50, 250))
+    epochs.filter(None, 290, verbose=False)
+    per_band = features.band_power(epochs).reshape(4, len(features.FREQ_BANDS), 3)
+    np.testing.assert_allclose(per_band.sum(axis=1), 1, atol=0.01)
+
+
+def test_band_power_rejects_bands_narrower_than_the_resolution():
+    with pytest.raises(ValueError, match='narrow band'):
+        features.band_power(make_epochs(), bands={'narrow': (10, 10.5)})
+
+
+def test_welch_power_is_the_signal_variance():
+    epochs = make_epochs(freqs=(None, None), bads=['B[X]'], n_times=3121)
+    power = features.welch_power(epochs)
+    assert power.shape == (4, 1)
+    np.testing.assert_allclose(power, features.variance(epochs), rtol=0.1)
