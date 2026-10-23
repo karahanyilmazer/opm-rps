@@ -69,7 +69,10 @@ def plot_tf_grid(
     for ax, (data, panel_title), panel_levels in zip(
         axs.flat, panels, levels, strict=True
     ):
-        contours = ax.contourf(times, freqs, data, levels=panel_levels, cmap=cmap)
+        # extend: values beyond fixed levels get the end colours instead of none
+        contours = ax.contourf(
+            times, freqs, data, levels=panel_levels, cmap=cmap, extend='both'
+        )
         is_power_panel = ax is axs[0, -1]
         fig.colorbar(
             contours, ax=ax, format='%.1f', label=power_unit if is_power_panel else ''
