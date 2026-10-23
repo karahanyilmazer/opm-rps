@@ -138,7 +138,7 @@ class Config:
         names = {
             'src': f'{self.subject}-oct6-src.fif',
             'bem': f'{self.subject}-ico5-bem-sol.fif',
-            'cov': f'{self.subject}-cov.fif',
+            'cov': f'{self.subject}-baseline-cov.fif',
             'fwd': f'{self.subject}-misaligned-ico5-fwd.fif',
             'inv': f'{self.subject}-misaligned-ico5-meg-inv.fif',
             'stc': f'{self.subject}-misaligned-ico5-sloreta',  # + -lh/-rh.stc

@@ -77,17 +77,17 @@ mne.write_forward_solution(cfg.source_file('fwd'), fwd, overwrite=True)
 n_sensors, n_dipoles = fwd['sol']['data'].shape
 print(f'Leadfield: {n_sensors} sensors x {n_dipoles} dipoles')
 
-# %% Noise covariance: computed once, then read from disk
-# Note: estimated from the whole epochs, not only the pre-cue baseline
-cov_file = cfg.source_file('cov')
-if cov_file.exists():
-    cov = mne.read_cov(cov_file)
-else:
-    cov = mne.compute_covariance(epochs, method='auto')
-    cov.save(cov_file)
+# %% Noise covariance from the pre-cue baseline (start of the epoch to the cue)
+# The HFC projectors reduce the rank of the data by their number (8 for order 2)
+cov = mne.compute_covariance(epochs, tmax=0, method='auto', rank='info')
+cov.save(cfg.source_file('cov'), overwrite=True)
+rank = mne.compute_rank(cov, info=epochs.info)['mag']
+n_channels, n_projs = len(epochs.ch_names), len(epochs.info['projs'])
+print(f'Noise covariance rank: {rank} ({n_channels} channels - {n_projs} projectors)')
+mne.viz.plot_cov(cov, epochs.info)
 
 # %% Inverse operator and sLORETA estimate of the evoked response
-inv = make_inverse_operator(epochs.info, fwd, cov, loose=0.2)
+inv = make_inverse_operator(epochs.info, fwd, cov, loose=0.2, rank='info')
 mne.minimum_norm.write_inverse_operator(cfg.source_file('inv'), inv, overwrite=True)
 stc, residual = apply_inverse(
     evoked, inv, method='sLORETA', pick_ori=None, return_residual=True
