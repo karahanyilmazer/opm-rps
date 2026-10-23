@@ -1,15 +1,20 @@
 """Compute the source space, BEM, forward and inverse operator, and the sLORETA
 estimate of the evoked response.
 
-The MEG-MRI coregistration has not been done: the identity transform is used, so
-the source estimates are not anatomically aligned ("misaligned" in the file names).
+The head -> MRI transform is the MEG-MRI coregistration of source_space/coregister.py.
+With ``coregistration: identity`` (config.yaml) the identity transform is used
+instead, so the source estimates are not anatomically aligned ("misaligned" in the
+file names).
 
 Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+        derivatives/source/<subject>-trans.fif (source_space/coregister.py)
         and the FreeSurfer segmentation of the subject
 Outputs: derivatives/source/, derivatives/reports/source_space.html
 """
 
 # %%
+import warnings
+
 import mne
 from mne.minimum_norm import apply_inverse, make_inverse_operator
 
@@ -18,7 +23,15 @@ from opm_rps.config import load_config
 cfg = load_config()
 subject = cfg.subject
 subjects_dir = cfg.paths.subjects_dir
-TRANS = mne.transforms.Transform('head', 'mri')  # identity: not coregistered
+if cfg.coregistration == 'identity':
+    warnings.warn(
+        'No MEG-MRI coregistration (coregistration: identity): the source estimates '
+        'are not anatomically aligned',
+        stacklevel=1,
+    )
+    trans = mne.transforms.Transform('head', 'mri')
+else:
+    trans = mne.read_trans(cfg.source_file('trans'))
 
 epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))
 evoked = epochs.average()
@@ -71,7 +84,7 @@ mne.write_bem_solution(cfg.source_file('bem'), bem, overwrite=True)
 
 # %% Forward model (leadfield)
 fwd = mne.make_forward_solution(
-    epochs.info, trans=TRANS, src=src, bem=bem, meg=True, eeg=False, n_jobs=-1
+    epochs.info, trans=trans, src=src, bem=bem, meg=True, eeg=False, n_jobs=-1
 )
 mne.write_forward_solution(cfg.source_file('fwd'), fwd, overwrite=True)
 n_sensors, n_dipoles = fwd['sol']['data'].shape
@@ -94,17 +107,17 @@ stc, residual = apply_inverse(
 )
 stc.save(cfg.source_file('stc'), overwrite=True)
 
-# %% Report of the MRI, BEM and (identity) coregistration
+# %% Report of the MRI, BEM and coregistration
 report = mne.Report(title='Source Space')
 report.add_bem(
     subject=subject, subjects_dir=subjects_dir, title='MRI & BEM', width=512, n_jobs=-1
 )
 report.add_trans(
-    trans=TRANS,
+    trans=trans,
     info=epochs.info,
     subject=subject,
     subjects_dir=subjects_dir,
     alpha=1.0,
-    title='Coregistration',
+    title=f'Coregistration: {cfg.coregistration}',
 )
 report.save(cfg.paths.report('source_space.html'), overwrite=True)
