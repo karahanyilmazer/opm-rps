@@ -22,7 +22,7 @@ from opm_rps.config import AXES, load_config
 from opm_rps.preprocessing import apply_hfc, axis_channels, load_run, notch_filter
 
 cfg = load_config()
-RUNS = ['run_2', 'run_3', 'run_4']  # the original feature matrices exclude run 1
+RUNS = ['run_2', 'run_3', 'run_4']  # run 1 left out, as in the last original version
 
 # %% Preprocess the concatenated runs
 raws, events_list = zip(*(load_run(cfg, run, hfc=False) for run in RUNS), strict=True)

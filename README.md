@@ -115,6 +115,10 @@ flagged "Bad" in the recording's channels.tsv), applies homogeneous field correc
   are mixed with the neighbouring trials at low frequencies.
 - `bad_epochs` and `bad_epoch_indices` are two independent annotations of bad
   trials, made for different analyses.
+- The committed `derivatives/features/features.npz` predates the current feature
+  script: it was computed on 2023-09-19 from runs 1-4 (720 trials, no trials
+  rejected) with an earlier list of 22 bad channels. Run 1 was left out of the
+  script in 2024. Running `features/extract_features.py` replaces the file.
 
 ## Tests
 
