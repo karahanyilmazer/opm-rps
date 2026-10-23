@@ -103,9 +103,8 @@ flagged "Bad" in the recording's channels.tsv), applies homogeneous field correc
 analysis rejects the same trials: the union of the two bad-trial annotations in
 `config.yaml`, `bad_epochs` (the cue sample of each rejected trial, per run) and
 `bad_epoch_indices` (positions into the cue events of runs 1-4, per sensor axis);
-see `opm_rps.preprocessing.bad_trials`. Judging from the labels of the committed
-feature matrices, both annotations mark the same 122 trials (73, 18, 17 and 14 in
-runs 1-4). Beyond that:
+see `opm_rps.preprocessing.bad_trials`. Both annotations mark the same 122 of the
+720 trials (73, 18, 17 and 14 in runs 1-4). Beyond that:
 
 | Used by | Runs | Filtering | Epochs (-0.5 to 2.1 s) |
 | --- | --- | --- | --- |
@@ -147,13 +146,9 @@ The noise covariance of the inverse operator is estimated from the pre-cue basel
 - **Coregistration not verified on the data yet**: `coregistration` stays `identity`
   until the real recordings and MRI have been checked with `coregister.py`, so the
   source estimates are labelled "misaligned".
-- The committed `derivatives/features/features.npz` predates the current feature
-  script: it was computed on 2023-09-19 from runs 1-4 (720 trials, no trials
-  rejected) with an earlier list of 22 bad channels and 4.7 Hz Welch spectra (zero
-  delta, theta and alpha band power). Run 1 was left out of the script in 2024.
-  Running `features/extract_features.py` replaces the file.
-- The scripts have been verified on synthetic recordings and MNE's `fsaverage` since
-  the restructuring, not yet on the real recordings.
+- The feature matrices leave out run 1, as the original feature script did from
+  2024 on; no reason was recorded. Add `'run_1'` to `RUNS` in
+  `features/extract_features.py` to include its 107 good trials.
 
 ## Tests
 
