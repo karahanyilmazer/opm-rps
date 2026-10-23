@@ -33,6 +33,17 @@ def test_read_raw_cmeg(tmp_path):
     np.testing.assert_allclose(coil_frame @ coil_frame.T, np.eye(3), atol=1e-12)
 
 
+def test_helmet_config_with_metadata_line(tmp_path):
+    fname, _ = write_recording(tmp_path, 'rec', n_trials=2)
+    expected, _ = io.read_raw_cmeg(fname)
+    # Like the real sidecars: a last line with the helmet name and creation date
+    with open(tmp_path / 'rec_HelmConfig.tsv', 'a') as file:
+        file.write('Helmet:\tdense\tCreated:\t22\t6\t2023\tdd/mm/yyyy\thh:mm\n')
+    raw, _ = io.read_raw_cmeg(fname)
+    for ch, ch_expected in zip(raw.info['chs'], expected.info['chs'], strict=True):
+        np.testing.assert_array_equal(ch['loc'], ch_expected['loc'])
+
+
 def test_reference_sensor_and_escaped_scale_column(tmp_path):
     fname, _ = write_recording(
         tmp_path, 'rec', n_trials=2, reference_sensor=True, escaped_scale_column=True

@@ -168,25 +168,24 @@ def _sensor_geometry(
     """Look up position and orientation of each channel in the helmet config.
 
     Names are matched ignoring spaces and punctuation; channels without a match get
-    NaN.
+    NaN. Only the matched rows are converted to numbers: the sidecar ends with a line
+    of helmet metadata.
     """
 
     def normalize(name: str) -> str:
-        return re.sub(r'[\W_]+', '', name)
+        return re.sub(r'[\W_]+', '', str(name))
 
     row_of = {}
     for row, sensor in enumerate(helmet['Sensor']):
         row_of.setdefault(normalize(sensor), row)
-    helmet_pos = helmet[['Px', 'Py', 'Pz']].to_numpy(float)
-    helmet_ori = helmet[['Ox', 'Oy', 'Oz']].to_numpy(float)
 
     positions = np.full((len(names), 3), np.nan)
     orientations = np.full((len(names), 3), np.nan)
     for idx, name in enumerate(names):
         row = row_of.get(normalize(name))
         if row is not None:
-            positions[idx] = helmet_pos[row]
-            orientations[idx] = helmet_ori[row]
+            positions[idx] = helmet.iloc[row][['Px', 'Py', 'Pz']].to_numpy(float)
+            orientations[idx] = helmet.iloc[row][['Ox', 'Oy', 'Oz']].to_numpy(float)
     return positions, orientations
 
 

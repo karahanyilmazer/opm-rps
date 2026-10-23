@@ -7,8 +7,9 @@
 subject: '11766'     # participant = FreeSurfer subject name of the MRI segmentation
 session: '20230623'  # recording date
 
-# Layout of the data folder that OPM_RPS_DATA_DIR (.env) points to
-raw_subdir: Rock Paper Scissors/cmeg_data/OPM
+# Layout of the data folder that OPM_RPS_DATA_DIR (.env) points to: the dataset
+# folder from Nottingham (2023-06-21_nottingham), with one folder per session
+raw_subdir: ''
 mri_subdir: MRI/Segmentation
 
 # Start time (HHMMSS) of each cMEG acquisition of the session

@@ -16,8 +16,8 @@ uv sync --extra viz3d    # + 3D brain plots for the source-space scripts
 Tell the code where the data lives in a `.env` file at the repository root:
 
 ```bash
-# Folder containing "Rock Paper Scissors/" (raw cMEG data) and "MRI/" (FreeSurfer)
-OPM_RPS_DATA_DIR=/path/to/data/Gesture/Nottingham
+# Dataset folder containing "20230623/" (raw cMEG data) and "MRI/" (FreeSurfer)
+OPM_RPS_DATA_DIR=/path/to/opm-data/2023-06-21_nottingham
 
 # Optional
 # OPM_RPS_DERIVATIVES_DIR=/path/to/derivatives  # default: ./derivatives
@@ -28,7 +28,7 @@ Expected layout of the data folder:
 
 ```
 $OPM_RPS_DATA_DIR/
-├── Rock Paper Scissors/cmeg_data/OPM/20230623/
+├── 20230623/
 │   └── 20230623_<HHMMSS>_cMEG_Data/20230623_<HHMMSS>_meg.cMEG  (+ .json/.tsv sidecars)
 └── MRI/Segmentation/11766/                                   (FreeSurfer subject)
 ```
