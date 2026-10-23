@@ -10,8 +10,6 @@ from synthetic import SENSORS, sensor_geometry, write_recording
 
 from opm_rps import coregistration, io
 
-nib = pytest.importorskip('nibabel')
-
 SUBJECT = 'sphere'
 HEAD_RADIUS = 0.09  # m
 C_RAS = np.array([4.0, -17.0, 25.0])  # scanner RAS of the volume centre (mm)
@@ -19,22 +17,11 @@ C_RAS = np.array([4.0, -17.0, 25.0])  # scanner RAS of the volume centre (mm)
 
 @pytest.fixture(scope='module')
 def subjects_dir(tmp_path_factory):
-    """FreeSurfer subject with a spherical scalp centred on the surface RAS origin
-    and a T1.mgz whose scanner RAS frame is offset by ``C_RAS``."""
+    """FreeSurfer subject with a spherical scalp centred on the surface RAS origin."""
     subjects_dir = tmp_path_factory.mktemp('subjects')
-    for folder in ('mri', 'bem'):
-        (subjects_dir / SUBJECT / folder).mkdir(parents=True)
+    (subjects_dir / SUBJECT / 'bem').mkdir(parents=True)
 
-    # Conformed (LIA) volume with 1 mm voxels whose centre lies at C_RAS
-    n = 16
-    vox2ras = np.array(
-        [[-1.0, 0, 0, n / 2], [0, 0, 1, -n / 2], [0, -1, 0, n / 2], [0, 0, 0, 1]]
-    )
-    vox2ras[:3, 3] += C_RAS
-    image = nib.MGHImage(np.zeros((n, n, n), np.uint8), vox2ras)
-    nib.save(image, subjects_dir / SUBJECT / 'mri' / 'T1.mgz')
-
-    # Scalp: triangulated sphere with outward-facing triangles
+    # Triangulated sphere with outward-facing triangles
     golden = np.pi * (3 - np.sqrt(5))
     k = np.arange(4000)
     z = 1 - 2 * (k + 0.5) / k.size
@@ -48,6 +35,22 @@ def subjects_dir(tmp_path_factory):
     tris[inward] = tris[inward][:, ::-1]
     mne.write_head_bem(subjects_dir / SUBJECT / 'bem' / f'{SUBJECT}-head.fif', rr, tris)
     return subjects_dir
+
+
+@pytest.fixture(scope='module')
+def t1(subjects_dir):
+    """T1.mgz of the subject whose scanner RAS frame is offset by ``C_RAS``."""
+    nib = pytest.importorskip('nibabel')
+    (subjects_dir / SUBJECT / 'mri').mkdir()
+
+    # Conformed (LIA) volume with 1 mm voxels whose centre lies at C_RAS
+    n = 16
+    vox2ras = np.array(
+        [[-1.0, 0, 0, n / 2], [0, 0, 1, -n / 2], [0, -1, 0, n / 2], [0, 0, 0, 1]]
+    )
+    vox2ras[:3, 3] += C_RAS
+    image = nib.MGHImage(np.zeros((n, n, n), np.uint8), vox2ras)
+    nib.save(image, subjects_dir / SUBJECT / 'mri' / 'T1.mgz')
 
 
 def place_helmet(fname, helmet_to_scanner, bespoke):
@@ -70,6 +73,7 @@ def place_helmet(fname, helmet_to_scanner, bespoke):
     )
 
 
+@pytest.mark.usefixtures('t1')
 def test_scanner_to_surface_ras(subjects_dir):
     trans = coregistration.scanner_to_surface_ras(SUBJECT, subjects_dir)
     assert (trans['from'], trans['to']) == (
@@ -80,6 +84,7 @@ def test_scanner_to_surface_ras(subjects_dir):
     np.testing.assert_allclose(trans['trans'][:3, 3], -C_RAS / 1000)
 
 
+@pytest.mark.usefixtures('t1')
 @pytest.mark.parametrize('bespoke', [False, True])
 def test_scanner_ras_recovers_known_transform(tmp_path, subjects_dir, bespoke):
     fname, _ = write_recording(tmp_path, 'rec', n_trials=2, radius=0.1)
@@ -103,9 +108,9 @@ def test_scanner_ras_recovers_known_transform(tmp_path, subjects_dir, bespoke):
     )
 
 
-def test_unknown_method(subjects_dir):
+def test_unknown_method(tmp_path):
     with pytest.raises(ValueError, match='scanner_ras'):
-        coregistration.head_to_mri('scan', SUBJECT, subjects_dir)
+        coregistration.head_to_mri('scan', SUBJECT, tmp_path)
 
 
 def test_scalp_distances(tmp_path, subjects_dir):
