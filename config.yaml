@@ -1,7 +1,7 @@
 # Analysis configuration of the OPM rock-paper-scissors project.
 #
 # Machine-specific paths (where the raw data and the MRI live) are not set here
-# but in a `.env` file at the repository root, see `.env.example`.
+# but in a `.env` file at the repository root, see the README.
 
 # --- Dataset ------------------------------------------------------------------
 subject: '11766'     # participant = FreeSurfer subject name of the MRI segmentation
