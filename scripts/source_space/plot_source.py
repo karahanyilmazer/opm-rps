@@ -30,7 +30,8 @@ plt.show()
 vertno_max, time_max = stc.get_peak(hemi='lh')
 surfer_kwargs = dict(
     hemi='lh',
-    clim=dict(kind='value', lims=[2, 2.6, 6]),
+    # 99.8th and 99.96th percentile and close to the maximum of the sLORETA values
+    clim=dict(kind='value', lims=[1.85, 2.4, 5.2]),
     views='lateral',
     initial_time=time_max,
     time_unit='s',

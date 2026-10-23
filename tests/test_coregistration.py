@@ -159,11 +159,11 @@ def test_read_sensor_transforms(cfg):
 
 
 def test_source_file_names(cfg):
-    assert cfg.coregistration == 'identity'
-    assert cfg.source_file('fwd').name == f'{cfg.subject}-misaligned-ico5-fwd.fif'
     assert cfg.source_file('cov').name == f'{cfg.subject}-baseline-cov.fif'
+    assert cfg.source_file('trans').name == f'{cfg.subject}-trans.fif'
 
-    aligned = dataclasses.replace(cfg, coregistration='scanner_ras')
+    misaligned = dataclasses.replace(cfg, coregistration='identity')
     for kind in ('fwd', 'inv', 'stc'):
-        assert 'misaligned' not in aligned.source_file(kind).name
-    assert aligned.source_file('trans').name == f'{cfg.subject}-trans.fif'
+        assert '-misaligned-' in misaligned.source_file(kind).name
+    aligned = dataclasses.replace(cfg, coregistration='scanner_ras')
+    assert aligned.source_file('fwd').name == f'{cfg.subject}-ico5-fwd.fif'
