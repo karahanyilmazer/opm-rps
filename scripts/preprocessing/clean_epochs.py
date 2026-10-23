@@ -3,7 +3,8 @@
 The HFC-corrected runs are concatenated, reduced to the good MEG channels and
 band-passed with a zero-phase least-squares FIR filter (``decoding_band``). The
 epochs are linearly detrended and baseline-corrected (start of the epoch to the
-cue); the trials listed in ``bad_epoch_indices`` are dropped.
+cue); the rejected trials (``bad_epochs`` and ``bad_epoch_indices``, see
+``opm_rps.preprocessing.bad_trials``) are dropped.
 
 Output: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz
 """
@@ -14,19 +15,20 @@ import mne
 import numpy as np
 
 from opm_rps.config import load_config
-from opm_rps.preprocessing import apply_fir, firls_bandpass, load_run, trigger_channels
+from opm_rps.preprocessing import (
+    apply_fir,
+    concatenate_runs,
+    drop_trials,
+    firls_bandpass,
+    trigger_channels,
+)
 from opm_rps.viz import plot_fir_response, set_style
 
 set_style()
 cfg = load_config()
 
 # %% Concatenate the HFC-corrected runs
-raws, events_list = [], []
-for run in cfg.runs:
-    raw, events = load_run(cfg, run)
-    raws.append(raw)
-    events_list.append(events)
-raw, events = mne.concatenate_raws(raws, events_list=events_list)
+raw, events, bad_samples = concatenate_runs(cfg, cfg.runs)
 raw.drop_channels(trigger_channels(raw.ch_names) + raw.info['bads'])
 
 # %% Design the band-pass filter
@@ -64,8 +66,6 @@ plt.show()
 
 # %% Epoch, drop the rejected trials and save
 tmin, tmax = cfg.epoch_window
-# Not preloaded on purpose: the indices of the rejected trials count all cue
-# events, including the trials that MNE drops when loading (e.g. at run boundaries)
 epochs = mne.Epochs(
     raw,
     events,
@@ -75,5 +75,5 @@ epochs = mne.Epochs(
     baseline=(None, 0),
     detrend=cfg.detrend,
 )
-epochs.drop(sorted(set().union(*cfg.bad_epoch_indices.values())))
+drop_trials(epochs, bad_samples)
 epochs.save(cfg.paths.clean_epochs(l_freq, h_freq), fmt='double', overwrite=True)

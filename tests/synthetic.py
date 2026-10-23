@@ -187,10 +187,12 @@ def write_dataset(root: str | Path, n_trials: int = 30, **recording_kwargs) -> P
         if run == 'run_3':  # crop away the last trial, like the real run 3
             crop_tmax = int(cues[-1] / SFREQ) - 1
 
+    # With 12 trials per run, the indices 40 and 42 fall in run 4 (after the crop of
+    # run 3): its trial 5, also in bad_epochs, and its trial 7
     params.update(
         crop={'run_3': [0, crop_tmax]},
         bad_epochs=bad_samples,
-        bad_epoch_indices={'X': [0, 3], 'Y': [3, 40], 'Z': [7]},
+        bad_epoch_indices={'X': [0, 3], 'Y': [3, 40], 'Z': [7, 42]},
         bad_channels=['FR[Y]', 'FZ[X]', 'K9[X]', 'LN[X]', 'LN[Y]', 'MV[Z]'],
     )
     config_file = root / 'config.yaml'
