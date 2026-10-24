@@ -70,7 +70,9 @@ report.add_stc(
 report.save(cfg.paths.report('source_estimate.html'), overwrite=True)
 
 # %% MNE (minimum-norm) estimate of the evoked response for comparison
-evoked = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band)).average()
+evoked = mne.read_epochs(
+    cfg.paths.clean_epochs(*cfg.decoding_band), preload=False
+).average()
 snr = 3.0
 stc_mne = apply_inverse(evoked, inv, lambda2=1.0 / snr**2, method='MNE', pick_ori=None)
 vertno_max, time_max = stc_mne.get_peak(hemi='lh')

@@ -6,7 +6,7 @@ epochs are linearly detrended and baseline-corrected (start of the epoch to the
 cue); the rejected trials (``bad_epochs`` and ``bad_epoch_indices``, see
 ``opm_rps.preprocessing.bad_trials``) are dropped.
 
-Output: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz
+Output: derivatives/epochs/all_runs-filt_7_30-epo.fif
 """
 
 # %%

@@ -74,7 +74,7 @@ flowchart LR
 
 | Script (`scripts/...`) | Reads | Writes (`derivatives/...`) |
 | --- | --- | --- |
-| `preprocessing/clean_epochs.py` | raw runs 1-4 | `epochs/all_runs-filt_7_30-epo.fif.gz` |
+| `preprocessing/clean_epochs.py` | raw runs 1-4 | `epochs/all_runs-filt_7_30-epo.fif` |
 | `features/extract_features.py` | raw runs 2-4 | `features/features.npz` |
 | `features/extract_tf.py` | raw runs 1-4 | `tf/tf-<run>-<axis>.npz` |
 | `decoding/decode_csp.py` | cleaned epochs | (scores, embeddings) |

@@ -3,7 +3,7 @@
 The cleaned epochs are projected to the cortex with sLORETA (normal orientation) and
 a logistic regression is trained at every time point.
 
-Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif (preprocessing/clean_epochs.py)
         and the inverse operator (source_space/source_reconstruction.py)
 """
 
@@ -31,7 +31,7 @@ SNR = 3.0
 CHANCE = 1 / len(cfg.events)
 
 # %% Source estimates of all epochs
-epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))
+epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band), preload=False)
 epochs.decimate(DECIM)
 inv = read_inverse_operator(cfg.source_file('inv'))
 vertices = inv['src'][0]['vertno']  # left hemisphere only

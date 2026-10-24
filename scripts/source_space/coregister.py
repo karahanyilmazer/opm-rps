@@ -6,7 +6,7 @@ The distances from the sensors to the scalp are compared between all methods: wi
 correct transform, every sensor lies outside the head, a few millimetres to a few
 centimetres from the scalp.
 
-Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif (preprocessing/clean_epochs.py)
         with the sensor positions, the SensorTransform sidecars of the runs and the
         FreeSurfer segmentation of the subject
 Outputs: derivatives/source/<subject>-trans.fif (not for ``identity``),

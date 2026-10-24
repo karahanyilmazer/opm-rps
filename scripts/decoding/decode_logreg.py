@@ -1,7 +1,7 @@
 """Linear decoding of two conditions with logistic regression on all channels and time
 points, and topomaps of the resulting spatial patterns and filters.
 
-Input: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+Input: derivatives/epochs/all_runs-filt_7_30-epo.fif (preprocessing/clean_epochs.py)
 """
 
 # %%
@@ -20,8 +20,8 @@ CONDITIONS = ['roc', 'sci']
 TIME_WINDOW = (0.5, 2.0)  # s after the cue
 
 # %% Fit a logistic regression on the z-scored, vectorised epochs
-epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))[CONDITIONS]
-epochs.crop(*TIME_WINDOW)
+epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band), preload=False)
+epochs = epochs[CONDITIONS].load_data().crop(*TIME_WINDOW)  # reads these epochs only
 X = epochs.get_data(copy=True).reshape(len(epochs), -1)
 y = epochs.events[:, -1]
 

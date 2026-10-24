@@ -6,7 +6,7 @@ With ``coregistration: identity`` (config.yaml) the identity transform is used
 instead, so the source estimates are not anatomically aligned ("misaligned" in the
 file names).
 
-Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif (preprocessing/clean_epochs.py)
         derivatives/source/<subject>-trans.fif (source_space/coregister.py)
         and the FreeSurfer segmentation of the subject
 Outputs: derivatives/source/, derivatives/reports/source_space.html
@@ -33,7 +33,7 @@ if cfg.coregistration == 'identity':
 else:
     trans = mne.read_trans(cfg.source_file('trans'))
 
-epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))
+epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band), preload=False)
 evoked = epochs.average()
 
 # %% Anatomy: cortical parcellation and BEM surfaces
