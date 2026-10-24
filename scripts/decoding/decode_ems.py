@@ -5,7 +5,7 @@ The surrogates shown in the figures come from a cross-validation of the EMS filt
 The decoding refits the filters within every fold of its own cross-validation, so
 that the labels of its test trials never shape the surrogates it trains on.
 
-Input: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+Input: derivatives/epochs/all_runs-filt_7_30-epo.fif (preprocessing/clean_epochs.py)
 """
 
 # %%
@@ -39,7 +39,8 @@ PIPELINES = {
 }
 
 # %% Load the data
-epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))[CONDITIONS]
+epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band), preload=False)
+epochs = epochs[CONDITIONS]  # read from disk by get_data below, these epochs only
 X = epochs.get_data(copy=True)
 y = epochs.events[:, -1]
 n_epochs, n_channels, n_times = X.shape

@@ -57,7 +57,7 @@ class Paths:
     # --- Outputs --------------------------------------------------------------
     def clean_epochs(self, l_freq: float, h_freq: float) -> Path:
         """Band-passed epochs of all runs used for decoding and source analysis."""
-        return self._output('epochs', f'all_runs-filt_{l_freq}_{h_freq}-epo.fif.gz')
+        return self._output('epochs', f'all_runs-filt_{l_freq}_{h_freq}-epo.fif')
 
     @property
     def features(self) -> Path:

@@ -1,6 +1,6 @@
 """Decode the gesture from the cleaned epochs with CSP-based pipelines.
 
-Input: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
+Input: derivatives/epochs/all_runs-filt_7_30-epo.fif (preprocessing/clean_epochs.py)
 """
 
 # %%
@@ -40,8 +40,8 @@ PIPELINES = {
 }
 
 # %% Load the data
-epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))
-X = epochs.copy().crop(*TIME_WINDOW).get_data(copy=True)
+epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band), preload=False)
+X = epochs.load_data().crop(*TIME_WINDOW).get_data(copy=False)
 y = epochs.events[:, -1]
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=99, stratify=y
