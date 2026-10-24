@@ -11,6 +11,7 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from opm_rps.config import load_config
 from opm_rps.decoding import (
     cross_validate,
+    evaluate_on_test_set,
     plot_confusion_matrices,
     plot_fold_embeddings,
     plot_sweep,
@@ -65,5 +66,5 @@ best_neighbors = neighbors[np.argmax(test_means)]
 results = cross_validate(umap_svm(best_neighbors), X_train, y_train, cv=cv)
 plot_fold_embeddings(results, X_train, y_train, n_steps=2, name='UMAP')
 final = umap_svm(best_neighbors).fit(X_train, y_train)
-print(f'Test accuracy: {final.score(X_test, y_test):.3f}')
+evaluate_on_test_set(final, X_test, y_test)
 plot_confusion_matrices(final, X_train, y_train, X_test, y_test)

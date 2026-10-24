@@ -6,9 +6,14 @@ from collections.abc import Callable, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import binom
 from sklearn.base import BaseEstimator
 from sklearn.metrics import ConfusionMatrixDisplay
-from sklearn.model_selection import BaseCrossValidator, StratifiedKFold
+from sklearn.model_selection import (
+    BaseCrossValidator,
+    StratifiedKFold,
+    permutation_test_score,
+)
 from sklearn.model_selection import cross_validate as sk_cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -62,6 +67,71 @@ def print_scores(train_scores: Sequence[float], test_scores: Sequence[float]) ->
     """Print per-fold and mean accuracies."""
     for name, scores in (('Train', train_scores), ('CV', test_scores)):
         print(f'{name:5s} accuracy: {np.round(scores, 3)}, mean {np.mean(scores):.3f}')
+
+
+def permutation_test(
+    pipe: Pipeline,
+    X: np.ndarray,
+    y: np.ndarray,
+    cv: BaseCrossValidator,
+    n_permutations: int = 1000,
+    n_jobs: int = 1,
+) -> tuple[float, float]:
+    """Cross-validated accuracy and its p-value under shuffled labels.
+
+    The whole cross-validation is repeated with ``n_permutations`` shufflings of the
+    labels (:func:`sklearn.model_selection.permutation_test_score`). The p-value is
+    the fraction of shufflings, counting the true labels as one of them, that reach
+    at least the accuracy of the true labels. Returns the accuracy and the p-value.
+    """
+    score, null_scores, pvalue = permutation_test_score(
+        pipe,
+        X,
+        y,
+        cv=cv,
+        n_permutations=n_permutations,
+        n_jobs=n_jobs,
+        random_state=0,
+        scoring='accuracy',
+    )
+    print(
+        f'Permutation test: CV accuracy {score:.3f}, shuffled labels '
+        f'{null_scores.mean():.3f} +- {null_scores.std():.3f}, p = {pvalue:.4f} '
+        f'({n_permutations} permutations)'
+    )
+    return score, pvalue
+
+
+def chance_level(y: np.ndarray) -> float:
+    """Accuracy of always predicting the most frequent class."""
+    return np.unique(y, return_counts=True)[1].max() / len(y)
+
+
+def binomial_pvalues(y_true: np.ndarray, y_pred: np.ndarray) -> float | np.ndarray:
+    """One-sided exact binomial p-values of the accuracy of predictions.
+
+    Tests the number of correct predictions against :func:`chance_level`. Only valid
+    for trials that played no part in fitting or selecting the model (a held-out
+    test set). ``y_pred`` has one prediction per trial, or one per trial and time
+    point (n_trials, n_times) for time-resolved decoding.
+    """
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    n_correct = np.sum(y_pred == y_true.reshape(-1, *[1] * (y_pred.ndim - 1)), axis=0)
+    return binom.sf(n_correct - 1, len(y_true), chance_level(y_true))
+
+
+def evaluate_on_test_set(
+    model: BaseEstimator, X_test: np.ndarray, y_test: np.ndarray
+) -> tuple[float, float]:
+    """Accuracy of a fitted model on the held-out test set and its binomial p-value."""
+    y_pred = model.predict(X_test)
+    accuracy = np.mean(y_pred == y_test)
+    pvalue = binomial_pvalues(y_test, y_pred)
+    print(
+        f'Test accuracy {accuracy:.3f} (n = {len(y_test)}, chance '
+        f'{chance_level(y_test):.3f}), p = {pvalue:.4f} (binomial test)'
+    )
+    return accuracy, pvalue
 
 
 def plot_fold_embeddings(
@@ -182,13 +252,17 @@ def plot_confusion_matrices(
 def umap_svm_pipeline(
     umap_params: dict | None = None, svm_params: dict | None = None
 ) -> Pipeline:
-    """Standard scaling, UMAP embedding and an SVM classifier."""
+    """Standard scaling, UMAP embedding and an SVM classifier.
+
+    UMAP is seeded (``random_state=42`` unless ``umap_params`` sets it), so that the
+    results are reproducible; this also makes it run single-threaded.
+    """
     from umap import UMAP
 
     return Pipeline(
         [
             ('Scaler', StandardScaler()),
-            ('UMAP', UMAP(**(umap_params or {}))),
+            ('UMAP', UMAP(**{'random_state': 42, **(umap_params or {})})),
             ('SVM', SVC(**(svm_params or {}))),
         ]
     )

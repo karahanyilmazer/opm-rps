@@ -3,6 +3,11 @@
 Classical pipelines on one feature set: PCA + SVM, LDA + SVM (shrinkage sweep) and
 UMAP + SVM (n_neighbors sweep, optionally a Weights & Biases random search).
 
+The cross-validated accuracy of PCA + SVM is tested against shuffled labels
+(permutation test). For LDA and UMAP the best sweep value is chosen on the
+cross-validation folds, which makes their cross-validated accuracy optimistic, so the
+final models are tested on the held-out test set (binomial test).
+
 Input: derivatives/features/features.npz (features/extract_features.py)
 """
 
@@ -20,6 +25,8 @@ from sklearn.svm import SVC
 from opm_rps.config import load_config
 from opm_rps.decoding import (
     cross_validate,
+    evaluate_on_test_set,
+    permutation_test,
     plot_confusion_matrices,
     plot_fold_embeddings,
     plot_sweep,
@@ -36,6 +43,7 @@ cfg = load_config()
 FEATURES = 'bp'  # 'bp' (band power), 'var' (variance) or 'welch' (Welch power)
 SENSOR_AXES = 'xyz'  # axes whose features are concatenated
 RUN_WANDB_SWEEP = False  # random search of UMAP + SVM hyperparameters
+N_PERMUTATIONS = 1000  # label shufflings of the permutation test (0 skips it)
 
 # %% Load the features
 data = np.load(cfg.paths.features)
@@ -69,6 +77,8 @@ pipe = Pipeline(
     ]
 )
 results = cross_validate(pipe, X_train, y_train, cv=cv)
+if N_PERMUTATIONS:
+    permutation_test(pipe, X_train, y_train, cv, N_PERMUTATIONS)
 plot_fold_embeddings(results, X_train, y_train, n_steps=2, name='PCA')
 
 # %% LDA embedding of the training set (automatic shrinkage)
@@ -99,6 +109,7 @@ best_shrinkage = shrinkages[np.argmax(test_means)]
 results = cross_validate(lda_svm(best_shrinkage), X_train, y_train, cv=cv)
 plot_fold_embeddings(results, X_train, y_train, n_steps=2, name='LDA')
 final = lda_svm(best_shrinkage).fit(X_train, y_train)
+evaluate_on_test_set(final, X_test, y_test)
 plot_confusion_matrices(final, X_train, y_train, X_test, y_test)
 
 # %% UMAP + SVM: n_neighbors sweep
@@ -121,4 +132,5 @@ best_neighbors = neighbors[np.argmax(test_means)]
 results = cross_validate(umap_svm(best_neighbors), X_train, y_train, cv=cv_umap)
 plot_fold_embeddings(results, X_train, y_train, n_steps=2, name='UMAP')
 final = umap_svm(best_neighbors).fit(X_train, y_train)
+evaluate_on_test_set(final, X_test, y_test)
 plot_confusion_matrices(final, X_train, y_train, X_test, y_test)

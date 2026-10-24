@@ -142,6 +142,20 @@ scanner_ras` in `config.yaml`) and checks it with the sensor-to-scalp distances
 The noise covariance of the inverse operator is estimated from the pre-cue baseline
 (-0.5 to 0 s) of the cleaned epochs; its rank is reduced by the 8 HFC projectors.
 
+### Statistics of the decoding results
+
+The decoding accuracies are tested against chance (`opm_rps.decoding`):
+
+- A cross-validated accuracy is tested with a permutation test: the whole
+  cross-validation is repeated with shuffled labels (`N_PERMUTATIONS` in
+  `decode_features.py` for PCA + SVM, `decode_csp.py` and `decode_ems.py`).
+- Where hyperparameters are chosen by cross-validation (the LDA and UMAP sweeps of
+  `decode_features.py` and `decode_tf.py`), the cross-validated accuracy is
+  optimistic. The final model is tested on the held-out test set instead, with an
+  exact binomial test against the accuracy of always predicting the most frequent
+  class. `decode_source.py` does this at every time point and corrects for the
+  number of time points (false discovery rate).
+
 ## Known caveats of the analysis
 
 - The feature matrices leave out run 1, as the original feature script did from
