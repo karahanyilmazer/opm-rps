@@ -5,6 +5,8 @@ Output: derivatives/figures/sensors/
 
 # %%
 import matplotlib.pyplot as plt
+from mne import pick_channels, pick_info
+from mne.viz import plot_sensors
 
 from opm_rps.config import AXES, load_config
 from opm_rps.io import read_run
@@ -18,20 +20,27 @@ RUN = 'run_1'
 
 raw, _ = read_run(cfg, RUN)
 mark_bad_channels(raw, cfg.bad_channels)
-axis_raws = {axis: raw.copy().pick(axis_channels(raw.ch_names, axis)) for axis in AXES}
+# Only the channel info is needed, so the data is not copied
+axis_infos = {
+    axis: pick_info(
+        raw.info, pick_channels(raw.ch_names, axis_channels(raw.ch_names, axis))
+    )
+    for axis in AXES
+}
+del raw
 
 # %%
 for show_bads, fname in ((True, 'sensors_bad.png'), (False, 'sensors_all.png')):
     fig, axs = plt.subplots(1, 3)
     for ax, axis in zip(axs, AXES, strict=True):
-        axis_raw = axis_raws[axis].copy()
+        info = axis_infos[axis].copy()
         title = f'{axis}-Axis\n'
         if show_bads:
-            dropped = 100 * len(axis_raw.info['bads']) / len(axis_raw.ch_names)
+            dropped = 100 * len(info['bads']) / len(info['ch_names'])
             title += f'({dropped:.1f}% Dropped)'
         else:
-            axis_raw.info['bads'] = []
-        axis_raw.plot_sensors(axes=ax, show=False)
+            info['bads'] = []
+        plot_sensors(info, axes=ax, show=False)
         ax.set_title(title)
     plt.tight_layout()
     fig.savefig(cfg.paths.figure('sensors', fname))

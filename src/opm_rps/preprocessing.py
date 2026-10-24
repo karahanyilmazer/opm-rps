@@ -211,9 +211,13 @@ def firls_bandpass(
 
 
 def apply_fir(raw: mne.io.BaseRaw, kernel: np.ndarray) -> None:
-    """Zero-phase filter all channels of a preloaded Raw in place."""
+    """Zero-phase filter all channels of a preloaded Raw in place.
+
+    Channel by channel: filtering all channels at once needs several copies of the
+    data, and gives the same result.
+    """
     raw.apply_function(
-        lambda data: filtfilt(kernel, 1, data), picks='all', channel_wise=False
+        lambda data: filtfilt(kernel, 1, data), picks='all', channel_wise=True
     )
 
 

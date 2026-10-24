@@ -34,14 +34,26 @@ CHANCE = 1 / len(cfg.events)
 epochs = mne.read_epochs(cfg.paths.clean_epochs(*cfg.decoding_band))
 epochs.decimate(DECIM)
 inv = read_inverse_operator(cfg.source_file('inv'))
+vertices = inv['src'][0]['vertno']  # left hemisphere only
+# One epoch at a time: the estimates of all epochs and both hemispheres would take
+# twice the memory of X
 stcs = apply_inverse_epochs(
-    epochs, inv, lambda2=1.0 / SNR**2, method='sLORETA', pick_ori='normal'
+    epochs,
+    inv,
+    lambda2=1.0 / SNR**2,
+    method='sLORETA',
+    pick_ori='normal',
+    return_generator=True,
 )
-X = np.array([stc.lh_data for stc in stcs])  # left hemisphere only
+X = np.fromiter(
+    (stc.lh_data for stc in stcs),
+    dtype=(float, (len(vertices), len(epochs.times))),
+    count=len(epochs),
+)
 y = epochs.events[:, 2]
 times = epochs.times
-vertices, tmin, tstep = stcs[0].lh_vertno, stcs[0].tmin, stcs[0].tstep
-del stcs, inv
+tmin, tstep = times[0], 1 / epochs.info['sfreq']
+del inv
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.3, stratify=y, random_state=42

@@ -1,6 +1,10 @@
 """Effect-matched spatial (EMS) filtering of two conditions and decoding of the
 resulting single-trial surrogate time courses.
 
+The surrogates shown in the figures come from a cross-validation of the EMS filters.
+The decoding refits the filters within every fold of its own cross-validation, so
+that the labels of its test trials never shape the surrogates it trains on.
+
 Input: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
 """
 
@@ -81,10 +85,13 @@ plt.show()
 # %% Spatial filters over time
 plot_topomaps_per_axis(filters, epochs.info, epochs.tmin, 'EMS filters', scalings=1)
 
-# %% Decode the conditions from the surrogates
+# %% Decode the conditions from the surrogates of EMS filters fitted in each fold
+# Decoding the surrogates above would leak the labels of the test trials, which
+# helped to fit the filters of the training trials (well above chance even for
+# shuffled labels)
 results = cross_validate(
-    PIPELINES[PIPELINE],
-    surrogates,
+    Pipeline([('EMS', EMS()), *PIPELINES[PIPELINE].steps]),
+    X / np.std(X),
     y,
     cv=KFold(n_splits=3, shuffle=True, random_state=50),
 )

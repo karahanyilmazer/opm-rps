@@ -61,16 +61,14 @@ def read_raw_cmeg(fname: str | Path) -> tuple[mne.io.RawArray, np.ndarray | None
     scales = channels['nT/V'].to_numpy(dtype=float)
     positions, orientations = _sensor_geometry(channels['name'], helmet)
 
-    raw_data = read_cmeg_data(fname)[1:]  # the first row holds the time stamps
-    data = np.empty(raw_data.shape)
+    data = read_cmeg_data(fname)[1:]  # the first row holds the time stamps
     ch_types = []
     for idx, kind in enumerate(kinds):
         if kind == 'MEGMAG':
             ch_types.append('mag')
-            data[idx] = 1e-9 * raw_data[idx] / scales[idx]  # nT -> T
+            data[idx] = 1e-9 * data[idx] / scales[idx]  # nT -> T, in place
         elif kind in ('TRIG', 'MISC'):  # trigger and BNC channels stay in V
             ch_types.append('stim')
-            data[idx] = raw_data[idx]
         else:
             raise ValueError(f'Unknown channel type {kind!r} of {ch_names[idx]}')
 
@@ -128,17 +126,29 @@ def read_cmeg_data(fname: str | Path) -> np.ndarray:
 
     The file is a sequence of chunks, each a header of two big-endian uint32
     (number of channels and samples) followed by the samples as big-endian float64.
-    The first channel holds the time stamps.
+    The first channel holds the time stamps. The chunks are read into a single array
+    whose size is taken from their headers first, so that the data is held once.
     """
     fname = Path(fname)
     size = fname.stat().st_size
-    chunks = []
     with open(fname, 'rb') as fid:
+        headers = []
         while fid.tell() < size:
             n_channels, n_samples = (int(n) for n in np.fromfile(fid, '>u4', count=2))
+            headers.append((n_channels, n_samples))
+            fid.seek(8 * n_channels * n_samples, 1)  # skip the samples
+
+        if len({n_channels for n_channels, _ in headers}) > 1:
+            raise ValueError(f'The chunks of {fname.name} differ in channels')
+        data = np.empty((headers[0][0], sum(n_samples for _, n_samples in headers)))
+        fid.seek(0)
+        start = 0
+        for n_channels, n_samples in headers:
+            fid.seek(8, 1)  # skip the header
             chunk = np.fromfile(fid, '>f8', count=n_channels * n_samples)
-            chunks.append(chunk.reshape(n_channels, n_samples))
-    return np.concatenate(chunks, axis=1).astype(np.float64)
+            data[:, start : start + n_samples] = chunk.reshape(n_channels, n_samples)
+            start += n_samples
+    return data
 
 
 def find_trigger_events(stim_data: np.ndarray) -> np.ndarray | None:
