@@ -96,10 +96,17 @@ def test_haufe_patterns_match_mne_linear_model(data):
     )
 
 
-def test_umap_svm_pipeline():
+def test_umap_svm_pipeline(data):
     pipe = decoding.umap_svm_pipeline({'n_neighbors': 5}, {'gamma': 'auto'})
     assert pipe['UMAP'].n_neighbors == 5
     assert pipe['SVM'].gamma == 'auto'
+    assert decoding.umap_svm_pipeline({'random_state': 1})['UMAP'].random_state == 1
+
+    # Seeded: refitting gives the same embedding
+    X, y = data
+    first = decoding.umap_svm_pipeline({'n_neighbors': 5})[:2].fit_transform(X, y)
+    second = decoding.umap_svm_pipeline({'n_neighbors': 5})[:2].fit_transform(X, y)
+    np.testing.assert_array_equal(first, second)
 
 
 def test_parula_cmap():

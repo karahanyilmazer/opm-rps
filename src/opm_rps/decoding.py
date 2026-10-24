@@ -252,13 +252,17 @@ def plot_confusion_matrices(
 def umap_svm_pipeline(
     umap_params: dict | None = None, svm_params: dict | None = None
 ) -> Pipeline:
-    """Standard scaling, UMAP embedding and an SVM classifier."""
+    """Standard scaling, UMAP embedding and an SVM classifier.
+
+    UMAP is seeded (``random_state=42`` unless ``umap_params`` sets it), so that the
+    results are reproducible; this also makes it run single-threaded.
+    """
     from umap import UMAP
 
     return Pipeline(
         [
             ('Scaler', StandardScaler()),
-            ('UMAP', UMAP(**(umap_params or {}))),
+            ('UMAP', UMAP(**{'random_state': 42, **(umap_params or {})})),
             ('SVM', SVC(**(svm_params or {}))),
         ]
     )
