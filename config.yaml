@@ -47,6 +47,20 @@ notch_freqs: [227, 277.15, 473]
 broadband: [1, 400]     # MNE band-pass of the feature matrices
 decoding_band: [7, 30]  # least-squares FIR band-pass of the cleaned decoding epochs
 
+# --- Source space -------------------------------------------------------------
+# MEG-MRI coregistration: the head -> MRI transform of the forward model (see
+# scripts/source_space/coregister.py). The head frame is the frame into which the
+# SensorTransform sidecar maps the helmet; the identity if no coregistration was
+# saved at acquisition.
+#   identity     none: the head frame is taken as the MRI frame, so the source
+#                estimates are not anatomically aligned ("misaligned" file names)
+#   scanner_ras  the head frame is the scanner RAS frame of the MRI (a helmet
+#                designed on the MRI, or a SensorTransform into the MRI), which the
+#                header of T1.mgz converts to FreeSurfer's surface RAS frame
+# 11766 wore a helmet designed on the MRI; all SensorTransforms are the identity
+# and every sensor lies 5-24 mm outside the scalp (coregister.py)
+coregistration: scanner_ras
+
 # --- Bad channels and trials --------------------------------------------------
 # Inspection notes:
 # Run 1: bad LN[X, Y, Z], FZ[X], K9[X], KF[Y], MU[Z], FR[Z]

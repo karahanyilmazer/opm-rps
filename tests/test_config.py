@@ -12,7 +12,7 @@ def test_repository_config():
     assert set(cfg.bad_epochs) == set(cfg.runs)
     assert set(cfg.bad_epoch_indices) == set(config.AXES)
     assert cfg.roi_channel('X') == 'KB[X]'
-    assert cfg.source_file('fwd').name == '11766-misaligned-ico5-fwd.fif'
+    assert cfg.source_file('fwd').name == '11766-ico5-fwd.fif'
 
 
 def test_missing_data_dir(monkeypatch, tmp_path):

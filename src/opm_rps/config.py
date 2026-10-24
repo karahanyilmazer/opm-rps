@@ -117,6 +117,7 @@ class Config:
     bad_epochs: dict[str, list[int]]
     bad_epoch_indices: dict[str, list[int]]
     motor_channels: list[str]
+    coregistration: str
     paths: Paths
 
     @property
@@ -129,19 +130,22 @@ class Config:
         return f'{self.roi_sensor}[{axis}]'
 
     def source_file(self, kind: str) -> Path:
-        """Source-space file: ``'src'``, ``'bem'``, ``'cov'``, ``'fwd'``, ``'inv'``
-        or ``'stc'``.
+        """Source-space file: ``'trans'``, ``'src'``, ``'bem'``, ``'cov'``, ``'fwd'``,
+        ``'inv'`` or ``'stc'``.
 
-        The MEG-MRI coregistration has not been done, so everything that depends on
-        the sensor positions relative to the brain is labelled "misaligned".
+        Without a MEG-MRI coregistration (``coregistration: identity``), everything
+        that depends on the sensor positions relative to the brain is labelled
+        "misaligned".
         """
+        aligned = '-misaligned' if self.coregistration == 'identity' else ''
         names = {
+            'trans': f'{self.subject}-trans.fif',
             'src': f'{self.subject}-oct6-src.fif',
             'bem': f'{self.subject}-ico5-bem-sol.fif',
-            'cov': f'{self.subject}-cov.fif',
-            'fwd': f'{self.subject}-misaligned-ico5-fwd.fif',
-            'inv': f'{self.subject}-misaligned-ico5-meg-inv.fif',
-            'stc': f'{self.subject}-misaligned-ico5-sloreta',  # + -lh/-rh.stc
+            'cov': f'{self.subject}-baseline-cov.fif',
+            'fwd': f'{self.subject}{aligned}-ico5-fwd.fif',
+            'inv': f'{self.subject}{aligned}-ico5-meg-inv.fif',
+            'stc': f'{self.subject}{aligned}-ico5-sloreta',  # + -lh/-rh.stc
         }
         return self.paths.source(names[kind])
 
