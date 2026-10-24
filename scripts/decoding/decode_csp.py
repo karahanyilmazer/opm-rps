@@ -13,7 +13,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
 from opm_rps.config import load_config
-from opm_rps.decoding import cross_validate, plot_fold_embeddings
+from opm_rps.decoding import (
+    cross_validate,
+    evaluate_on_test_set,
+    permutation_test,
+    plot_fold_embeddings,
+)
 from opm_rps.viz import set_style
 
 set_style()
@@ -21,6 +26,11 @@ cfg = load_config()
 
 TIME_WINDOW = (0.5, 2.0)  # s after the cue
 PIPELINE = 'pca_csp_svm'  # key of PIPELINES below
+# Label shufflings of the permutation test (0 skips it). Each repeats the whole
+# cross-validation, which takes 20-60 s for 'pca_csp_svm' on the real data, and
+# N_JOBS of them run in parallel (each needs about 2 GB more memory)
+N_PERMUTATIONS = 100
+N_JOBS = 4
 
 
 def csp():
@@ -49,12 +59,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # %% Cross-validate on the training set
 pipe = PIPELINES[PIPELINE]
-results = cross_validate(
-    pipe, X_train, y_train, cv=KFold(n_splits=3, shuffle=True, random_state=42)
-)
+cv = KFold(n_splits=3, shuffle=True, random_state=42)
+results = cross_validate(pipe, X_train, y_train, cv=cv)
+if N_PERMUTATIONS:
+    permutation_test(pipe, X_train, y_train, cv, N_PERMUTATIONS, n_jobs=N_JOBS)
 if 'PCA' in pipe.named_steps:
     plot_fold_embeddings(results, X_train, y_train, n_steps=1, name='PCA')
 
 # %% Test-set accuracy of the pipeline fitted on the whole training set
 pipe.fit(X_train, y_train)
-print(f'Test accuracy: {pipe.score(X_test, y_test):.3f}')
+evaluate_on_test_set(pipe, X_test, y_test)

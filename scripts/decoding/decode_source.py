@@ -1,7 +1,8 @@
 """Time-resolved decoding of the gesture in source space (left hemisphere).
 
 The cleaned epochs are projected to the cortex with sLORETA (normal orientation) and
-a logistic regression is trained at every time point.
+a logistic regression is trained at every time point. Its accuracy on the held-out
+test set is tested against chance at every time point (binomial test, FDR-corrected).
 
 Inputs: derivatives/epochs/all_runs-filt_7_30-epo.fif.gz (preprocessing/clean_epochs.py)
         and the inverse operator (source_space/source_reconstruction.py)
@@ -13,6 +14,7 @@ import mne
 import numpy as np
 from mne.decoding import LinearModel, SlidingEstimator, cross_val_multiscore, get_coef
 from mne.minimum_norm import apply_inverse_epochs, read_inverse_operator
+from mne.stats import fdr_correction
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.multiclass import OneVsRestClassifier
@@ -20,6 +22,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from opm_rps.config import load_config
+from opm_rps.decoding import binomial_pvalues
 from opm_rps.io import CONDITION_NAMES
 from opm_rps.viz import set_style
 
@@ -66,12 +69,25 @@ time_decod = SlidingEstimator(
 )
 
 
-def plot_scores(curves: dict, title: str, fname: str) -> None:
+def plot_scores(
+    curves: dict, title: str, fname: str, significant: np.ndarray | None = None
+) -> None:
     fig, ax = plt.subplots()
     ax.axhline(CHANCE, color='k', linestyle='--', label='Chance')
     ax.axvline(0, color='k')
     for label, scores in curves.items():
         ax.plot(times, scores, label=label)
+    if significant is not None:
+        ax.fill_between(
+            times,
+            0,
+            1,
+            where=significant,
+            transform=ax.get_xaxis_transform(),
+            color='gray',
+            alpha=0.3,
+            label='Test p < 0.05 (FDR)',
+        )
     ax.set(title=title, xlabel='Time (s)', ylabel='Accuracy')
     ax.legend(loc='lower right')
     fig.savefig(cfg.paths.figure('decoding', fname))
@@ -87,7 +103,14 @@ plot_scores(
 )
 
 # %% Training and test accuracy over time
+# The test accuracy is compared with chance at every time point (binomial test) and
+# the p-values are corrected for the number of time points (false discovery rate)
 time_decod.fit(X_train, y_train)
+pvalues = binomial_pvalues(y_test, time_decod.predict(X_test))
+significant, _ = fdr_correction(pvalues, alpha=0.05)
+edges = np.flatnonzero(np.diff(np.r_[0, significant.astype(int), 0]))
+windows = [f'{times[a]:.3f}-{times[b - 1]:.3f} s' for a, b in edges.reshape(-1, 2)]
+print(f'Test accuracy above chance (p < 0.05, FDR): {", ".join(windows) or "never"}')
 plot_scores(
     {
         'Train': time_decod.score(X_train, y_train),
@@ -95,6 +118,7 @@ plot_scores(
     },
     'Source Space Decoding Accuracy Over Time',
     'decoding_accuracies_source.png',
+    significant=significant,
 )
 
 # %% Spatial patterns of each class (model fitted on all trials)

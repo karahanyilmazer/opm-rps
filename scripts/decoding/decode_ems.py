@@ -20,7 +20,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 from opm_rps.config import load_config
-from opm_rps.decoding import cross_validate
+from opm_rps.decoding import cross_validate, permutation_test
 from opm_rps.io import CONDITION_NAMES
 from opm_rps.viz import plot_topomaps_per_axis, set_style
 
@@ -29,6 +29,10 @@ cfg = load_config()
 
 CONDITIONS = ['roc', 'sci']
 PIPELINE = 'scaler_svm'  # key of PIPELINES below
+# Label shufflings of the permutation test (0 skips it). Each repeats the whole
+# cross-validation (about 5 s on the real data); N_JOBS of them run in parallel
+N_PERMUTATIONS = 1000
+N_JOBS = 4
 PIPELINES = {
     'scaler_svm': Pipeline([('Scaler', StandardScaler()), ('SVM', SVC(gamma='auto'))]),
     'svm': Pipeline([('SVM', SVC(gamma='auto'))]),
@@ -89,9 +93,9 @@ plot_topomaps_per_axis(filters, epochs.info, epochs.tmin, 'EMS filters', scaling
 # Decoding the surrogates above would leak the labels of the test trials, which
 # helped to fit the filters of the training trials (well above chance even for
 # shuffled labels)
-results = cross_validate(
-    Pipeline([('EMS', EMS()), *PIPELINES[PIPELINE].steps]),
-    X / np.std(X),
-    y,
-    cv=KFold(n_splits=3, shuffle=True, random_state=50),
-)
+pipe = Pipeline([('EMS', EMS()), *PIPELINES[PIPELINE].steps])
+X_scaled = X / np.std(X)
+cv = KFold(n_splits=3, shuffle=True, random_state=50)
+results = cross_validate(pipe, X_scaled, y, cv=cv)
+if N_PERMUTATIONS:
+    permutation_test(pipe, X_scaled, y, cv, N_PERMUTATIONS, n_jobs=N_JOBS)
