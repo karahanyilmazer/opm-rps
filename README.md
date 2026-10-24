@@ -95,6 +95,10 @@ Run a script with `uv run python scripts/<step>/<script>.py`, or open it in VS C
 and run it cell by cell (`# %%`). When editing `src/opm_rps` during an interactive
 session, enable `%autoreload 2`.
 
+Run the scripts one at a time. On the real data, the preprocessing, figure and
+decoding scripts each need up to about 17 GB of memory, and an interactive window
+keeps its data until its kernel is restarted.
+
 ### Preprocessing at a glance
 
 Every analysis marks the bad channels (`bad_channels` in `config.yaml` plus those
