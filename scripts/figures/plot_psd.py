@@ -18,10 +18,12 @@ cfg = load_config()
 
 def plot_axis_psds(raw, run: str, stage: str, suffix: str) -> None:
     """One PSD figure per sensor axis."""
+    spectrum = raw.compute_psd()  # good data channels of all axes, without copying raw
     for axis in AXES:
         fig, ax = plt.subplots(figsize=(12, 6))
-        spectrum = raw.copy().pick(axis_channels(raw.ch_names, axis)).compute_psd()
-        spectrum.plot(axes=ax, show=False)
+        spectrum.copy().pick(axis_channels(spectrum.ch_names, axis)).plot(
+            axes=ax, show=False
+        )
         ax.set_title(f'Run {run[-1]}, {axis}-Axis, {stage}')
         fig.savefig(
             cfg.paths.figure('psd', f'raw-{run[-1]}_{axis.lower()}-{suffix}.png')

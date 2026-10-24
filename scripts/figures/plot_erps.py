@@ -5,6 +5,7 @@ Output: derivatives/figures/erp/
 
 # %%
 import matplotlib.pyplot as plt
+from mne import pick_info
 from mne.viz import plot_sensors
 from mpl_toolkits.axes_grid1 import inset_locator
 
@@ -46,7 +47,7 @@ def plot_erps(highlight: tuple[float, float] | None = None) -> plt.Figure:
             ax, width='30%', height='30%', loc='upper right'
         )
         plot_sensors(
-            epochs.copy().pick(channel).info,
+            pick_info(epochs.info, [epochs.ch_names.index(channel)]),
             axes=inset,
             show_names=True,
             pointsize=5,
