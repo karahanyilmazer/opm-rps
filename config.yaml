@@ -133,8 +133,10 @@ bad_channels:
   - MU[Z]
   - I5[Y]
 
-# Rejected trials of each run, as the sample index of the trial's cue event.
-# Used by the per-run analyses (ERPs, time-frequency).
+# Rejected trials, as recorded by two inspections. Every trial-level analysis
+# rejects the union of both (opm_rps.preprocessing.bad_trials).
+#
+# 1. Per run: the sample index of the cue event of each rejected trial
 bad_epochs:
   run_1:
     - 56067  # roc
@@ -263,9 +265,9 @@ bad_epochs:
     - 802127  # roc
     - 621723  # roc
 
-# Rejected trials of the concatenated runs, as indices into all cue events of
-# runs 1-4 (before MNE's automatic rejection), marked separately on each sensor
-# axis. Their union is dropped from the cleaned decoding epochs.
+# 2. Per sensor axis: positions into the cue events of all `runs`, concatenated in
+# that order after cropping (counting the trials that MNE drops automatically, e.g.
+# at run boundaries)
 bad_epoch_indices:
   X: [81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
       100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
