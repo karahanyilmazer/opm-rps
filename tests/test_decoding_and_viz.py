@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.decomposition import PCA
 from sklearn.model_selection import StratifiedKFold
@@ -73,6 +74,38 @@ def test_tf_grid():
     fig = viz.plot_tf_grid(tf, tf / 2, tf, tf / 2, times, freqs, title='test')
     assert len(fig.axes) == 12  # six panels and their colour bars
     plt.close(fig)
+
+
+def test_result_figures():
+    rows, pipelines = ['Rock vs paper', 'All three'], ['CSP', 'SFBCSP']
+    accuracies = pd.DataFrame(
+        [[0.6, np.nan], [0.4, 0.5]], index=rows, columns=pipelines
+    )
+    fig = viz.plot_test_accuracies(
+        accuracies,
+        chance=pd.Series([0.5, 1 / 3], index=rows),
+        threshold=pd.Series([0.6, 0.4], index=rows),
+    )
+    assert [tick.get_text() for tick in fig.axes[0].get_xticklabels()] == rows
+
+    runs = ['Run 1', 'Run 2']
+    table = pd.DataFrame([[0.5, 0.3], [0.4, np.nan]], index=runs, columns=runs)
+    fig = viz.plot_cross_accuracies({'CSP': table, 'SFBCSP': table}, chance=1 / 3)
+    assert len(fig.axes) == 3  # two tables and their colour bar
+    # Every accuracy is written into its cell, except the missing one
+    assert len(fig.axes[0].texts) == 3
+
+    bands = [(7.0, 11.0), (9.0, 13.0), (11.0, 15.0)]
+    coefs = {'Rock vs rest': np.arange(6.0), 'Paper vs rest': -np.arange(6.0)}
+    fig = viz.plot_lasso_coefficients(coefs, bands)
+    bars = fig.axes[1].patches
+    assert len(bars) == 6  # two features per band
+    assert sorted(bar.get_height() for bar in bars) == list(range(6))  # absolute
+    centres = [bar.get_x() + bar.get_width() / 2 for bar in bars]
+    np.testing.assert_allclose(
+        np.mean(np.reshape(centres, (3, 2)), axis=1), [9, 11, 13]
+    )
+    plt.close('all')
 
 
 def test_topomaps_of_triaxial_sensors(cfg):
