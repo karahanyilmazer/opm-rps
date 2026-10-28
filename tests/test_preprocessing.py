@@ -144,6 +144,40 @@ def test_load_epochs_concatenates_runs(cfg):
     assert len(both) == len(run_1) + len(run_2)
 
 
+def test_filter_bank_epochs(cfg):
+    bands = [(8.0, 16.0), (20.0, 40.0)]
+    runs = ['run_1', 'run_2']
+    per_band = preprocessing.filter_bank_epochs(cfg, runs, bands, decim=4)
+    reference = preprocessing.load_epochs(cfg, runs)
+    raw, _ = preprocessing.load_run(cfg, 'run_1')
+    good = raw.copy().pick('mag', exclude='bads').ch_names
+
+    assert len(per_band) == len(bands)
+    for epochs in per_band:
+        # The trials of every other analysis, with their runs
+        np.testing.assert_array_equal(epochs.events[:, 2], reference.events[:, 2])
+        counts = epochs.metadata['run'].value_counts()
+        for run in runs:
+            assert counts[run] == len(preprocessing.load_epochs(cfg, run))
+        assert epochs.ch_names == good
+        assert epochs.info['sfreq'] == raw.info['sfreq'] / 4
+        assert (epochs.tmin, epochs.tmax) == pytest.approx(cfg.epoch_window, abs=0.01)
+        assert epochs.baseline is None
+
+    # Within a run, the same events as the epochs of the other analyses
+    single = preprocessing.filter_bank_epochs(cfg, 'run_2', bands)
+    np.testing.assert_array_equal(
+        single[0].events, preprocessing.load_epochs(cfg, 'run_2').events
+    )
+
+    # The synthetic 12 Hz response over the ROI sensor lies in the first band only
+    roi = cfg.roi_channel('Z')
+    power = [
+        epochs.get_data(picks=roi, tmin=0.5, tmax=1.5).var() for epochs in per_band
+    ]
+    assert power[0] > 10 * power[1]
+
+
 def test_mark_bad_channels_skips_unknown_names(cfg):
     raw, _ = io.read_run(cfg, 'run_1')
     with pytest.warns(UserWarning, match='NOPE'):
