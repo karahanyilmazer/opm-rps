@@ -49,7 +49,9 @@ set_style()
 cfg = load_config()
 
 TIME_WINDOW = (0.5, 2.0)  # s after the cue, as in decode_csp.py; (-0.5, 0) as a control
-RANDOM_STATE = 12  # seed of the split into training and test trials
+# Seed of the split into training and test trials. The test accuracies change by
+# several points from one seed to another, see the README
+RANDOM_STATE = 12
 CONTRASTS = {
     'Rock vs paper': ['roc', 'pap'],
     'Rock vs scissors': ['roc', 'sci'],
