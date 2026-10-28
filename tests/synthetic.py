@@ -1,4 +1,5 @@
-"""Synthetic recordings in the format of the Nottingham OPM system, for tests."""
+"""Synthetic data for the tests: recordings in the format of the Nottingham OPM system
+and trials whose classes differ in the variance of a hidden source."""
 
 from __future__ import annotations
 
@@ -158,6 +159,25 @@ def write_recording(
         json.dumps({'SamplingFrequency': SFREQ, 'PowerLineFrequency': 50})
     )
     return directory / f'{stem}_meg.cMEG', events
+
+
+def simulate_csp_data(
+    rng: np.random.Generator,
+    n_trials: int = 60,
+    n_channels: int = 8,
+    n_times: int = 200,
+    n_classes: int = 2,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Trials of ``n_classes`` classes, mixed into ``n_channels`` channels.
+
+    Hidden source k has four times the amplitude in the trials of class k.
+    """
+    mixing = rng.normal(size=(n_channels, n_channels))
+    y = np.repeat(np.arange(n_classes), n_trials // n_classes)
+    sources = rng.normal(size=(len(y), n_channels, n_times))
+    for k in range(n_classes):
+        sources[y == k, k] *= 4
+    return np.einsum('cs,nst->nct', mixing, sources), y
 
 
 def write_dataset(root: str | Path, n_trials: int = 30, **recording_kwargs) -> Path:

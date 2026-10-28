@@ -1,6 +1,7 @@
 import matplotlib
+import numpy as np
 import pytest
-from synthetic import write_dataset
+from synthetic import simulate_csp_data, write_dataset
 
 from opm_rps.config import load_config
 
@@ -16,3 +17,14 @@ def cfg(tmp_path_factory):
         mp.setenv('OPM_RPS_DATA_DIR', str(root / 'data'))
         mp.setenv('OPM_RPS_DERIVATIVES_DIR', str(root / 'derivatives'))
         yield load_config(config_file)
+
+
+@pytest.fixture
+def rng():
+    return np.random.default_rng(42)
+
+
+@pytest.fixture
+def csp_data(rng):
+    """Two classes whose first and second hidden source differ in variance."""
+    return simulate_csp_data(rng)
