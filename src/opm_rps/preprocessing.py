@@ -7,6 +7,7 @@ from collections.abc import Iterable, Sequence
 
 import mne
 import numpy as np
+import pandas as pd
 from scipy.signal import filtfilt, firls
 
 from .config import Config
@@ -94,6 +95,65 @@ def load_epochs(
     if len(epochs_list) == 1:
         return epochs_list[0]
     return mne.concatenate_epochs(epochs_list)
+
+
+def filter_bank_epochs(
+    cfg: Config,
+    runs: str | Sequence[str],
+    bands: Sequence[tuple[float, float]],
+    *,
+    trans_bandwidth: float | str = 2.0,
+    decim: int = 1,
+) -> list[mne.BaseEpochs]:
+    """Epochs of the good magnetometers of one or more runs, band-passed into each
+    of several bands.
+
+    Each HFC-corrected run is band-passed into every band with MNE's zero-phase FIR
+    filter before it is epoched, so the filter has no edge effects within the
+    epochs. The transition bands are ``trans_bandwidth`` Hz wide on both sides
+    (``'auto'``: MNE's default, a quarter of the cutoff and at least 2 Hz). The
+    epochs are decimated by ``decim`` and neither detrended nor baseline-corrected.
+    Each run's rejected trials (:func:`bad_trials`) are dropped before the runs are
+    concatenated, and the run of each trial is in ``epochs.metadata['run']``.
+
+    Returns one Epochs object per band, all with the same trials.
+    """
+    runs = [runs] if isinstance(runs, str) else list(runs)
+    tmin, tmax = cfg.epoch_window
+    epochs_per_band = [[] for _ in bands]
+    for run in runs:
+        raw, events = load_run(cfg, run)
+        raw.pick('mag', exclude='bads')
+        metadata = pd.DataFrame({'run': [run] * len(events)})
+        for epochs_list, (l_freq, h_freq) in zip(epochs_per_band, bands, strict=True):
+            filtered = raw.copy().filter(
+                l_freq,
+                h_freq,
+                l_trans_bandwidth=trans_bandwidth,
+                h_trans_bandwidth=trans_bandwidth,
+            )
+            epochs = mne.Epochs(
+                filtered,
+                events,
+                cfg.event_id,
+                tmin=tmin,
+                tmax=tmax,
+                baseline=None,
+                decim=decim,
+                metadata=metadata,
+                preload=True,
+            )
+            epochs_list.append(epochs)
+    # Once all runs are loaded, so that bad_trials does not read them again
+    for i, run in enumerate(runs):
+        rejected = bad_trials(cfg, run)
+        for epochs_list in epochs_per_band:
+            drop_trials(epochs_list[i], rejected)
+
+    return [
+        epochs_list[0] if len(epochs_list) == 1 else mne.concatenate_epochs(epochs_list)
+        for epochs_list in epochs_per_band
+    ]
 
 
 def bad_trials(cfg: Config, run: str) -> np.ndarray:

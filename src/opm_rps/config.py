@@ -68,6 +68,11 @@ class Paths:
         """Single-trial time-frequency power of the ROI sensor of one run and axis."""
         return self._output('tf', f'tf-{run}-{axis}.npz')
 
+    @property
+    def filter_bank(self) -> Path:
+        """Epochs band-passed into the decoding band and the filter bank CSP bands."""
+        return self._output('features', 'filter_bank.npz')
+
     def source(self, name: str) -> Path:
         """Source-space object (source space, BEM, forward, covariance, ...)."""
         return self._output('source', name)

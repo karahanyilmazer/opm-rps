@@ -66,6 +66,21 @@ def test_band_power_rejects_bands_narrower_than_the_resolution():
         features.band_power(make_epochs(), bands={'narrow': (10, 10.5)})
 
 
+def test_filter_bank_bands():
+    thesis = features.filter_bank_bands()
+    assert len(thesis) == 17
+    assert thesis[0] == (4.0, 8.0) and thesis[-1] == (36.0, 40.0)
+
+    # The bands of extract_filter_bank.py, spanning the decoding band
+    decoding = features.filter_bank_bands(7, 30)
+    assert len(decoding) == 10
+    assert decoding[0] == (7.0, 11.0) and decoding[-1] == (25.0, 29.0)
+
+    wide = features.filter_bank_bands(bandwidth=12.0)
+    assert len(wide) == 13
+    assert wide[-1] == (28.0, 40.0)
+
+
 def test_welch_power_is_the_signal_variance():
     epochs = make_epochs(freqs=(None, None), bads=['B[X]'], n_times=3121)
     power = features.welch_power(epochs)

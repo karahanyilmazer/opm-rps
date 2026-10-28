@@ -1,4 +1,5 @@
-"""Hand-crafted per-channel features of epochs, computed on the good channels."""
+"""Hand-crafted per-channel features of epochs, computed on the good channels, and the
+frequency bands of the filter bank CSP."""
 
 from __future__ import annotations
 
@@ -74,6 +75,18 @@ def band_power(
         power = simpson(psd[..., in_band], x=freqs[in_band], axis=-1)
         powers.append(power / total if relative else power)
     return np.concatenate(powers, axis=1)
+
+
+def filter_bank_bands(
+    f_min: float = 4.0, f_max: float = 40.0, bandwidth: float = 4.0, step: float = 2.0
+) -> list[tuple[float, float]]:
+    """Overlapping frequency bands (Hz) between ``f_min`` and ``f_max``.
+
+    The defaults give the 17 bands of the thesis's filter bank CSP: 4-8 Hz, 6-10 Hz,
+    ..., 36-40 Hz.
+    """
+    lows = np.arange(f_min, f_max - bandwidth + step / 2, step)
+    return [(float(low), float(low + bandwidth)) for low in lows]
 
 
 def _good_channel_data(epochs: mne.BaseEpochs) -> np.ndarray:
